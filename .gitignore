@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# Local app data
+backend/data/
+storage/uploads/*
+storage/pages/*
+storage/exports/*
+chroma/
+.hf-cache/
+.tmp/
+.tmp-current/
+
+# Keep storage directories
+!storage/uploads/.gitkeep
+!storage/pages/.gitkeep
+!storage/exports/.gitkeep
+
+# Environment
+.env*
+!.env.example
+!**/.env.example
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
