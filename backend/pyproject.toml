@@ -55,9 +55,6 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-# The machine's temp root (D:\temp) is not writable; keep pytest temp files
-# inside the project so tmp_path fixtures never fail with PermissionError.
-addopts = "--basetemp=.tmp/pytest"
 
 [tool.ruff]
 line-length = 100

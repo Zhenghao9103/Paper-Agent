@@ -113,20 +113,22 @@ def test_development_contract_extends_runtime_with_tools_only() -> None:
 
 def test_figure_contract_is_isolated_and_cpu_pinned() -> None:
     requirements = _active_lines(BACKEND_ROOT / "requirements-figure.txt")
-    assert "-r requirements.txt" not in requirements
-    assert "--extra-index-url https://download.pytorch.org/whl/cpu" in requirements
-    assert {
+    assert requirements == [
+        "--extra-index-url https://download.pytorch.org/whl/cpu",
         "torch==2.6.0+cpu",
         "torchvision==0.21.0+cpu",
         "transformers==4.57.3",
         "mineru-vl-utils[transformers]==1.0.5",
         "accelerate==1.5.1",
+        "numpy==1.26.4",
+        "Pillow==11.3.0",
         "fastapi==0.116.1",
         "uvicorn==0.35.0",
         "python-multipart==0.0.20",
-        "Pillow==11.3.0",
-        "numpy==1.26.4",
-    } <= set(requirements)
+    ]
+    assert {"langgraph", "python-pptx"}.isdisjoint(
+        {_requirement_name(requirement) for requirement in requirements}
+    )
 
 
 def test_pyproject_matches_requirement_contracts() -> None:
@@ -136,3 +138,4 @@ def test_pyproject_matches_requirement_contracts() -> None:
 
     assert set(pyproject["project"]["dependencies"]) == runtime
     assert set(pyproject["project"]["optional-dependencies"]["dev"]) == development
+    assert "addopts" not in pyproject["tool"]["pytest"]["ini_options"]
