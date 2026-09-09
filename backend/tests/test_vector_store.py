@@ -119,6 +119,20 @@ def test_upsert_chunks_removes_stale_document_vectors_before_reparse(monkeypatch
     assert calls[1]["method"] == "upsert"
 
 
+def test_count_document_vectors_filters_by_document_id(monkeypatch) -> None:
+    calls: list[dict] = []
+
+    class FakeCollection:
+        def get(self, **kwargs):
+            calls.append(kwargs)
+            return {"ids": ["chunk-1", "chunk-2"]}
+
+    monkeypatch.setattr(vector_store, "get_paper_chunks_collection", lambda: FakeCollection())
+
+    assert vector_store.count_document_vectors(7) == 2
+    assert calls == [{"where": {"document_id": 7}, "include": []}]
+
+
 class FakeBgeM3Model:
     def __init__(self) -> None:
         self.calls: list[dict] = []

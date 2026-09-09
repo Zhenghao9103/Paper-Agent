@@ -28,7 +28,11 @@ from ..models.document import Document
 from ..models.page import DocumentPage
 from ..models.parsing import DocumentChunkDetail, DocumentElement
 from ..rag.bm25_store import delete_document_index, index_chunk
-from ..rag.vector_store import delete_document_chunks, upsert_chunks
+from ..rag.vector_store import (
+    count_document_vectors,
+    delete_document_chunks,
+    upsert_chunks,
+)
 from .document_store import DocumentStore
 from .figure_enrichment import enrich_document_figures
 from .mineru_figure_runtime import MinerUFigureServiceManager
@@ -290,8 +294,28 @@ def parse_and_store_document(db: Session, document: Document) -> bool:
             upsert_chunks(index_payload)
         else:
             delete_document_chunks(document.id)
+        vector_count = count_document_vectors(document.id)
+        if vector_count != len(index_payload):
+            raise RuntimeError(
+                f"Vector count mismatch for document {document.id}: "
+                f"expected {len(index_payload)}, got {vector_count}"
+            )
     except Exception:
         logger.warning("Vector indexing failed for document %s", document.id, exc_info=True)
+        timings["vector_embedding"] = round((perf_counter() - vector_started) * 1000)
+        timings["total"] = round((perf_counter() - total_started) * 1000)
+        db.rollback()
+        document.status = "failed"
+        db.add(document)
+        db.commit()
+        _write_pipeline_manifest(
+            document.id,
+            "vector_failed",
+            timings,
+            counts,
+            error_code="vector_index_failed",
+        )
+        return False
     timings["vector_embedding"] = round((perf_counter() - vector_started) * 1000)
     timings["total"] = round((perf_counter() - total_started) * 1000)
     document.status = "indexed"
@@ -377,14 +401,19 @@ def _write_pipeline_manifest(
     stage: str,
     timings_ms: dict[str, int],
     counts: dict[str, int],
+    *,
+    error_code: str | None = None,
 ) -> None:
     path = document_dir(document_id) / "pipeline-status.json"
     path.parent.mkdir(parents=True, exist_ok=True)
+    payload: dict[str, Any] = {
+        "pipeline_stage": stage,
+        "timings_ms": timings_ms,
+        "counts": counts,
+    }
+    if error_code is not None:
+        payload["error_code"] = error_code
     path.write_text(
-        json.dumps(
-            {"pipeline_stage": stage, "timings_ms": timings_ms, "counts": counts},
-            ensure_ascii=False,
-            indent=2,
-        ),
+        json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )

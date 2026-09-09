@@ -1,3 +1,4 @@
+import json
 import time
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from backend.app.models.parsing import DocumentElement
 from backend.app.models.session_memory import SessionMemory
 from backend.app.rag.bm25_store import search_bm25
 from backend.app.rag.vector_store import get_paper_chunks_collection
+from backend.app.services import ingestion
 from backend.app.services.analysis import fallback_analysis
 from backend.app.services.ingestion import parse_and_store_document
 from fastapi.testclient import TestClient
@@ -327,6 +329,7 @@ def test_structured_parse_routes_expose_blocks_elements_and_quality(
 
 def test_upload_keeps_parsed_text_when_vector_index_fails(
     client: TestClient,
+    test_storage_root: Path,
     monkeypatch,
 ) -> None:
     def fail_vector_write(*args, **kwargs) -> None:
@@ -345,11 +348,60 @@ def test_upload_keeps_parsed_text_when_vector_index_fails(
 
     assert response.status_code == 201
     created = response.json()
-    assert created["status"] == "indexed"
+    assert created["status"] == "failed"
     pages = client.get(f"/api/documents/{created['id']}/pages").json()
     chunks = client.get(f"/api/documents/{created['id']}/chunks").json()
     assert "Vector failure should not lose text" in pages[0]["text"]
     assert "Vector failure should not lose text" in chunks[0]["content"]
+    manifest = json.loads(
+        (
+            test_storage_root
+            / "documents"
+            / str(created["id"])
+            / "pipeline-status.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert manifest["pipeline_stage"] == "vector_failed"
+    assert manifest["error_code"] == "vector_index_failed"
+
+
+def test_upload_fails_when_vector_count_is_incomplete(
+    client: TestClient,
+    test_storage_root: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(ingestion, "upsert_chunks", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        ingestion,
+        "count_document_vectors",
+        lambda _document_id: 0,
+        raising=False,
+    )
+
+    response = client.post(
+        "/api/documents/upload",
+        files={
+            "file": (
+                "short-vector-write.pdf",
+                make_pdf_bytes("Every persisted chunk requires one vector."),
+                "application/pdf",
+            )
+        },
+    )
+
+    assert response.status_code == 201
+    created = response.json()
+    assert created["status"] == "failed"
+    manifest = json.loads(
+        (
+            test_storage_root
+            / "documents"
+            / str(created["id"])
+            / "pipeline-status.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert manifest["pipeline_stage"] == "vector_failed"
+    assert manifest["error_code"] == "vector_index_failed"
 
 
 def test_upload_keeps_bm25_index_when_vector_index_fails(
