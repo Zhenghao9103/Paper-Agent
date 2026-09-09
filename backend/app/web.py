@@ -13,6 +13,7 @@ def index() -> str:
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PaperMind Agent</title>
+    <link rel="stylesheet" href="/static/chat/chat-runtime.css?v=20260908" />
     <style>
       :root {
         --bg: #eef1f4;
@@ -243,6 +244,36 @@ def index() -> str:
         gap: 12px;
         padding: 20px;
       }
+      .upload-progress-panel { display: grid; gap: 6px; color: var(--muted); font-size: 13px; }
+      .upload-progress-panel[hidden] { display: none; }
+      .upload-progress-panel progress { width: 100%; height: 9px; accent-color: var(--ink-blue); }
+      .upload-file-list { display: grid; gap: 8px; margin-top: 8px; }
+      .upload-file-list:empty { display: none; }
+      .upload-file-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 90px;
+        gap: 6px 12px;
+        align-items: center;
+        padding: 9px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.55);
+      }
+      .upload-file-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink);
+      }
+      .upload-file-status { text-align: right; color: var(--muted); }
+      .upload-file-status.failed { color: var(--danger); }
+      .upload-file-status.completed { color: var(--success); }
+      .upload-file-item progress {
+        grid-column: 1 / -1;
+        width: 100%;
+        height: 7px;
+        accent-color: var(--ink-blue);
+      }
       .document-list, .result-list { display: grid; gap: 10px; }
       .pagination {
         align-items: center;
@@ -395,6 +426,39 @@ def index() -> str:
         box-shadow: 0 8px 22px rgba(18, 36, 50, 0.07);
       }
       .message.pending .bubble { color: var(--muted); }
+      .chat-status {
+        align-items: center;
+        display: inline-flex;
+        gap: 8px;
+      }
+      .chat-status-dot {
+        animation: chat-pulse 1.2s ease-in-out infinite;
+        background: var(--accent);
+        border-radius: 50%;
+        height: 8px;
+        width: 8px;
+      }
+      .chat-retry { margin-top: 9px; }
+      .message.agent .bubble.rendered { white-space: normal; }
+      .message.agent .bubble.rendered > :first-child { margin-top: 0; }
+      .message.agent .bubble.rendered > :last-child { margin-bottom: 0; }
+      .message.agent .bubble.rendered pre {
+        background: var(--surface-soft);
+        border: 1px solid var(--line-soft);
+        border-radius: 5px;
+        overflow-x: auto;
+        padding: 10px;
+      }
+      .message.agent .bubble.rendered :not(pre) > code {
+        background: var(--surface-soft);
+        border-radius: 3px;
+        padding: 1px 4px;
+      }
+      .message.agent .bubble.rendered .katex-display { overflow-x: auto; }
+      @keyframes chat-pulse {
+        0%, 100% { opacity: 0.35; transform: scale(0.8); }
+        50% { opacity: 1; transform: scale(1); }
+      }
       .chat-composer {
         background: #fffdf8;
         border-top: 1px solid #ded5c4;
@@ -505,12 +569,17 @@ def index() -> str:
               <div class="panel-header">
                 <div>
                   <h2>上传资料</h2>
-                  <p>支持 PDF 论文与 PPTX 汇报材料，上传后会自动解析并切块。</p>
+                  <p>仅支持 PDF 论文，上传后会自动解析并切块。</p>
                 </div>
               </div>
               <form class="upload-box" id="upload-form">
-                <input id="file-input" accept=".pdf,.pptx" type="file" />
+                <input id="file-input" accept=".pdf" multiple type="file" />
                 <button id="upload-button" type="submit">上传并解析</button>
+                <div class="upload-progress-panel" id="upload-progress-panel" hidden aria-live="polite">
+                  <span id="upload-progress-label">等待上传</span>
+                  <progress id="upload-progress" aria-label="PDF 上传与解析进度" max="100" value="0"></progress>
+                </div>
+                <div class="upload-file-list" id="upload-file-list" aria-live="polite"></div>
               </form>
               <p class="error" id="error"></p>
             </section>
@@ -552,7 +621,7 @@ def index() -> str:
             <div class="panel-header">
               <div>
                 <h2>研究问答</h2>
-                <p>基于本地知识库回答问题，并显示引用来源与 LangGraph 执行轨迹。</p>
+                <p>基于本地知识库回答问题，并显示引用来源与 Agentic-RAG 执行轨迹。</p>
               </div>
             </div>
             <div class="chat-shell">
@@ -587,6 +656,7 @@ def index() -> str:
       </main>
     </div>
 
+    <script src="/static/chat/chat-runtime.js?v=20260908"></script>
     <script>
       const viewCopy = {
         kb: ["知识库", "上传论文或 PPT，解析页面内容，并生成结构化中文分析。"],
@@ -609,6 +679,14 @@ def index() -> str:
       const form = document.getElementById("upload-form");
       const input = document.getElementById("file-input");
       const button = document.getElementById("upload-button");
+      const uploadProgressPanel = document.getElementById("upload-progress-panel");
+      const uploadProgress = document.getElementById("upload-progress");
+      const uploadProgressLabel = document.getElementById("upload-progress-label");
+      const uploadFileList = document.getElementById("upload-file-list");
+      const maxUploadFiles = 18;
+      const uploadConcurrency = 2;
+      const trackedUploads = new Map();
+      let uploadMonitorPromise = null;
       const clearDataButton = document.getElementById("clear-data-button");
       const documentPagination = document.getElementById("document-pagination");
       const documentPageStatus = document.getElementById("document-page-status");
@@ -616,6 +694,7 @@ def index() -> str:
       const documentNextButton = document.getElementById("document-next-button");
       const documentsPerPage = 5;
       let currentSessionId = null;
+      let activeChatRequest = false;
       let cachedDocuments = [];
       let currentDocumentPage = 1;
       const modelStatus = document.getElementById("model-status");
@@ -676,9 +755,9 @@ def index() -> str:
         try {
           const response = await fetch("/api/health/llm");
           const status = await response.json();
-          modelStatus.textContent = status.key_configured
-            ? `模型已配置：${status.model} · ${status.base_url}`
-            : "未读取到 OPENAI_API_KEY，当前会使用本地规则兜底分析。";
+          const router = status.router_model || {};
+          const agent = status.agent_model || {};
+          modelStatus.textContent = `Router：${router.key_configured ? "已配置" : "未配置"} · ${router.model || "-"}；Agent：${agent.key_configured ? "已配置" : "未配置"} · ${agent.model || "-"}`;
         } catch (statusError) {
           modelStatus.textContent = "模型配置检查失败。";
         }
@@ -691,9 +770,9 @@ def index() -> str:
         try {
           const response = await fetch("/api/health/llm?ping=true");
           const result = await response.json();
-          modelStatus.textContent = result.ok
-            ? `模型调用成功：${result.model} 返回 ${result.reply || "OK"}`
-            : `模型调用失败：${result.error || "未知错误"}`;
+          const router = result.router || {};
+          const agent = result.agent || {};
+          modelStatus.textContent = `Router：${router.ok ? "调用成功" : "不可用"}；Agent：${agent.ok ? "调用成功" : "不可用"}`;
         } catch (modelError) {
           modelStatus.textContent = `模型调用失败：${modelError.message || "请求异常"}`;
         } finally {
@@ -732,6 +811,8 @@ def index() -> str:
               <div class="meta">上传时间：${new Date(document.created_at).toLocaleDateString()}</div>
             </div>
             <div class="document-actions">
+              <button class="secondary" onclick="inspectDocument(${document.id})" type="button">查看解析内容</button>
+              ${document.status !== "parsing" ? `<button class="secondary" onclick="reparseDocument(${document.id})" type="button">重新解析</button>` : ""}
               <button onclick="analyzeDocument(${document.id})" type="button">分析</button>
               <span class="status status-${document.status}">${statusText(document.status)}</span>
             </div>
@@ -756,6 +837,82 @@ def index() -> str:
       function statusText(status) {
         const map = { uploaded: "已上传", indexed: "已入库", analyzed: "已分析", failed: "失败", parsing: "解析中" };
         return map[status] || status;
+      }
+
+      async function reparseDocument(documentId) {
+        const cachedDocument = cachedDocuments.find((item) => item.id === documentId);
+        if (cachedDocument) {
+          cachedDocument.status = "parsing";
+          renderDocumentPage();
+        }
+        let reparseMessage = "";
+        try {
+          const response = await fetch(`/api/documents/${documentId}/reparse`, { method: "POST" });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(result.detail || "重新解析失败。");
+          }
+          if (result.status === "failed") {
+            reparseMessage = "重新解析失败，请检查 PDF 后重试。";
+          }
+        } catch (reparseError) {
+          reparseMessage = reparseError.message || "重新解析失败。";
+        }
+        await loadDocuments();
+        if (reparseMessage) error.textContent = reparseMessage;
+      }
+
+      async function inspectDocument(documentId) {
+        showView("kb");
+        analysis.innerHTML = '<div class="empty-state">正在加载解析内容...</div>';
+        try {
+          const [elementResponse, chunkResponse] = await Promise.all([
+            fetch(`/api/documents/${documentId}/elements`),
+            fetch(`/api/documents/${documentId}/chunks`),
+          ]);
+          if (!elementResponse.ok || !chunkResponse.ok) {
+            throw new Error("解析内容加载失败");
+          }
+          const elements = await elementResponse.json();
+          const chunks = await chunkResponse.json();
+          const elementItems = elements.map((element) => renderElement(element)).join("");
+          const chunkItems = chunks.map((chunk) => analysisItem(
+            `Chunk ${chunk.chunk_index} · 第 ${chunk.page_number} 页`,
+            chunk.content,
+          )).join("");
+          analysis.innerHTML = elementItems + chunkItems
+            || '<div class="empty-state">暂无解析元素或 chunk。</div>';
+        } catch (inspectError) {
+          analysis.innerHTML = `<div class="empty-state">${escapeHtml(inspectError.message || "解析内容加载失败")}</div>`;
+        }
+      }
+
+      function renderElement(element) {
+        const structured = element.structured_data || {};
+        const title = `${element.element_type} · ${element.label || `第 ${element.page_number || "?"} 页`}`;
+        if (element.element_type === "table") {
+          const columns = Array.isArray(structured.columns) ? structured.columns : [];
+          const rows = Array.isArray(structured.rows) ? structured.rows : [];
+          if (!columns.length || !rows.length) return analysisItem(title, "未获得可靠的表格结构");
+          return `<article class="item"><h3>${escapeHtml(title)}</h3><div class="table-scroll"><table><thead><tr>${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${columns.map((column) => `<td>${escapeHtml(row[column] || "")}</td>`).join("")}</tr>`).join("")}</tbody></table></div></article>`;
+        }
+        if (element.element_type === "equation") {
+          return analysisItem(title, structured.latex || structured.raw_expression || element.raw_text || "公式识别结果不可用");
+        }
+        const description = structured.summary || element.vision_description || element.caption;
+        const action = description ? "" : `<button type="button" onclick="enrichFigure(${element.document_id}, ${element.id})">生成结构化描述</button>`;
+        return `<article class="item"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description || "暂无结构化描述")}</p>${action}</article>`;
+      }
+
+      async function enrichFigure(documentId, elementId) {
+        analysis.innerHTML = '<div class="empty-state">正在生成图片结构化描述...</div>';
+        const response = await fetch(`/api/documents/${documentId}/elements/${elementId}/enrich`, { method: "POST" });
+        if (!response.ok) {
+          const message = await readErrorMessage(response);
+          analysis.innerHTML = `<p class="error">${escapeHtml(message)}</p>`;
+          return;
+        }
+        await inspectDocument(documentId);
       }
 
       async function analyzeDocument(documentId) {
@@ -784,25 +941,179 @@ def index() -> str:
         return `<article class="item"><h3>${title}</h3><pre>${escapeHtml(value || "")}</pre></article>`;
       }
 
+      function createUploadItem(file) {
+        const root = document.createElement("div");
+        root.className = "upload-file-item";
+        root.innerHTML = `
+          <span class="upload-file-name" title="${escapeHtml(file.name)}">
+            ${escapeHtml(file.name)}
+          </span>
+          <span class="upload-file-status">等待上传</span>
+          <progress max="100" value="0" aria-label="${escapeHtml(file.name)} 上传进度"></progress>
+        `;
+        uploadFileList.appendChild(root);
+        return {
+          file,
+          root,
+          status: root.querySelector(".upload-file-status"),
+          progress: root.querySelector("progress"),
+        };
+      }
+
+      function setUploadItemStatus(item, label, state = "") {
+        item.status.textContent = label;
+        item.status.className = `upload-file-status${state ? ` ${state}` : ""}`;
+      }
+
+      function uploadPdf(data, item) {
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "/api/documents/upload-async");
+          xhr.responseType = "json";
+          xhr.upload.onprogress = (uploadEvent) => {
+            if (!uploadEvent.lengthComputable || !uploadEvent.total) return;
+            const percentage = Math.min(
+              100,
+              Math.round(uploadEvent.loaded / uploadEvent.total * 100),
+            );
+            item.progress.value = percentage;
+            setUploadItemStatus(item, `上传中 ${percentage}%`);
+          };
+          xhr.upload.onload = () => {
+            item.progress.value = 100;
+            setUploadItemStatus(item, "已上传，等待解析");
+          };
+          xhr.onerror = () => reject(new Error("上传连接中断，请重试。"));
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
+            else reject(new Error(xhr.response?.detail || xhr.responseText || "上传失败。"));
+          };
+          xhr.send(data);
+        });
+      }
+
+      function trackUploadedDocument(uploadedDocument, item) {
+        trackedUploads.set(uploadedDocument.id, item);
+        if (!uploadMonitorPromise) {
+          uploadMonitorPromise = pollDocumentStatus().finally(() => {
+            uploadMonitorPromise = null;
+          });
+        }
+      }
+
+      async function pollDocumentStatus() {
+        while (trackedUploads.size) {
+          try {
+            const response = await fetch("/api/documents");
+            if (!response.ok) throw new Error("文档状态读取失败");
+            const documents = await response.json();
+            cachedDocuments = documents;
+            updateStats();
+            renderDocumentPage();
+            for (const documentRecord of documents) {
+              const item = trackedUploads.get(documentRecord.id);
+              if (!item) continue;
+              if (documentRecord.status === "parsed") {
+                setUploadItemStatus(item, "正在解析并建立索引（正文已可用）");
+              } else if (["indexed", "analyzed"].includes(documentRecord.status)) {
+                setUploadItemStatus(item, "完成", "completed");
+                item.progress.value = 100;
+                trackedUploads.delete(documentRecord.id);
+              } else if (documentRecord.status === "failed") {
+                setUploadItemStatus(item, "解析失败", "failed");
+                trackedUploads.delete(documentRecord.id);
+              } else {
+                setUploadItemStatus(item, "排队或解析中");
+              }
+            }
+          } catch (monitorError) {
+            error.textContent = monitorError.message || "批量解析状态读取失败。";
+          }
+          if (trackedUploads.size) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        }
+      }
+
+      async function uploadOneFile(file, item) {
+        if (!file.name.toLowerCase().endsWith(".pdf")) {
+          throw new Error("仅支持 PDF 文件");
+        }
+        const data = new FormData();
+        data.append("file", file);
+        const uploadedDocument = await uploadPdf(data, item);
+        trackUploadedDocument(uploadedDocument, item);
+        return uploadedDocument;
+      }
+
+      async function uploadSelectedFiles(files) {
+        const items = files.map((file) => createUploadItem(file));
+        let cursor = 0;
+        let uploaded = 0;
+        let failed = 0;
+
+        async function worker() {
+          while (cursor < files.length) {
+            const index = cursor;
+            cursor += 1;
+            try {
+              await uploadOneFile(files[index], items[index]);
+              uploaded += 1;
+            } catch (uploadError) {
+              failed += 1;
+              items[index].progress.value = 0;
+              setUploadItemStatus(items[index], uploadError.message || "上传失败", "failed");
+            }
+            uploadProgress.max = files.length;
+            uploadProgress.value = uploaded + failed;
+            const processed = uploaded + failed;
+            uploadProgressLabel.textContent = (
+              `已提交 ${processed}/${files.length}，成功 ${uploaded}，失败 ${failed}`
+            );
+          }
+        }
+
+        await Promise.all(
+          Array.from({ length: Math.min(uploadConcurrency, files.length) }, worker),
+        );
+        return { uploaded, failed };
+      }
+
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (!input.files.length) {
-          error.textContent = "请先选择 PDF 或 PPTX 文件。";
+          error.textContent = "请先选择 PDF 文件。";
+          return;
+        }
+        const files = Array.from(input.files);
+        if (files.length > maxUploadFiles) {
+          error.textContent = `一次最多上传 ${maxUploadFiles} 篇 PDF。`;
           return;
         }
         button.disabled = true;
-        button.textContent = "上传中...";
-        const data = new FormData();
-        data.append("file", input.files[0]);
+        button.textContent = "批量上传中...";
+        input.disabled = true;
+        error.textContent = "";
+        uploadFileList.innerHTML = "";
+        uploadProgressPanel.hidden = false;
+        uploadProgress.max = files.length;
+        uploadProgress.value = 0;
+        uploadProgressLabel.textContent = `准备上传 ${files.length} 篇 PDF`;
         try {
-          const response = await fetch("/api/documents/upload", { method: "POST", body: data });
-          if (!response.ok) throw new Error(await response.text());
+          const result = await uploadSelectedFiles(files);
           input.value = "";
           await loadDocuments();
+          uploadProgress.max = files.length;
+          uploadProgress.value = files.length;
+          uploadProgressLabel.textContent = result.failed
+            ? `批量提交完成：成功 ${result.uploaded}，失败 ${result.failed}`
+            : `${result.uploaded} 篇 PDF 已全部提交，正在后台依次解析`;
         } catch (uploadError) {
-          error.textContent = uploadError.message || "上传失败。";
+          error.textContent = uploadError.message || "批量上传失败。";
+          uploadProgressLabel.textContent = "上传或解析失败";
         } finally {
           button.disabled = false;
+          input.disabled = false;
           button.textContent = "上传并解析";
         }
       });
@@ -824,46 +1135,119 @@ def index() -> str:
         return message;
       }
 
-      function renderAgentAnswer(result) {
-        return escapeHtml(result.answer);
+      function setPendingChatStatus(message, text) {
+        message.classList.add("pending");
+        const bubble = message.querySelector(".bubble");
+        bubble.classList.remove("rendered");
+        bubble.replaceChildren();
+        const status = document.createElement("span");
+        status.className = "chat-status";
+        const dot = document.createElement("span");
+        dot.className = "chat-status-dot";
+        const label = document.createElement("span");
+        label.setAttribute("data-chat-status", "");
+        label.textContent = text;
+        status.append(dot, label);
+        bubble.appendChild(status);
       }
 
-      chatForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const question = questionInput.value.trim();
-        if (!question) return;
-        appendChatMessage("user", "你", escapeHtml(question));
-        questionInput.value = "";
+      function showChatError(message, question, pendingMessage) {
+        pendingMessage.classList.remove("pending");
+        const bubble = pendingMessage.querySelector(".bubble");
+        bubble.classList.remove("rendered");
+        bubble.replaceChildren();
+        const errorText = document.createElement("span");
+        errorText.className = "error";
+        errorText.textContent = message;
+        const retry = document.createElement("button");
+        retry.className = "secondary chat-retry";
+        retry.type = "button";
+        retry.textContent = "重试";
+        retry.addEventListener("click", () => retryChatQuestion(question, pendingMessage));
+        bubble.append(errorText, document.createElement("br"), retry);
+      }
+
+      async function submitChatQuestion(question, pendingMessage = null, appendUser = true) {
+        if (activeChatRequest) return;
+        activeChatRequest = true;
+        if (appendUser) appendChatMessage("user", "你", escapeHtml(question));
+        if (!pendingMessage) {
+          pendingMessage = appendChatMessage("agent", "Agent", "", { pending: true });
+        }
+        setPendingChatStatus(pendingMessage, "已收到问题，正在开始处理");
         askButton.disabled = true;
         askButton.textContent = "思考中...";
         answer.innerHTML = "";
-        const pendingMessage = appendChatMessage("agent", "Agent", "正在检索本地知识库并组织回答...", { pending: true });
         try {
-          const response = await fetch("/api/chat/ask", {
+          const response = await fetch("/api/chat/stream", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question })
+            body: JSON.stringify({ question, session_id: currentSessionId })
           });
           if (!response.ok) {
             const message = await readErrorMessage(response);
             throw new Error(message || "问答失败，请查看后端日志。");
           }
-          const result = await response.json();
-          currentSessionId = result.session_id;
-          const agentAnswer = renderAgentAnswer(result);
-          pendingMessage.remove();
-          appendChatMessage("agent", "Agent", agentAnswer);
-          answer.innerHTML = `<div class="answer">${agentAnswer}</div>`;
+          let reportedError = null;
+          await PaperMindChat.consumeSse(response, (streamEvent) => {
+            if (streamEvent.type === "status" || streamEvent.type === "heartbeat") {
+              const status = pendingMessage.querySelector("[data-chat-status]");
+              if (status) {
+                const round = Number(streamEvent.round || 0);
+                status.textContent = round > 0
+                  ? `${streamEvent.message}（第 ${round} 轮）`
+                  : String(streamEvent.message || "仍在处理中");
+              }
+              return;
+            }
+            if (streamEvent.type === "session") {
+              currentSessionId = streamEvent.session_id;
+              return;
+            }
+            if (streamEvent.type === "error") {
+              reportedError = String(streamEvent.message || "问答失败。");
+              return;
+            }
+            if (streamEvent.type === "final_answer") {
+              currentSessionId = streamEvent.session_id;
+              pendingMessage.classList.remove("pending");
+              const bubble = pendingMessage.querySelector(".bubble");
+              bubble.classList.add("rendered");
+              if (window.PaperMindChat?.renderAnswer) {
+                PaperMindChat.renderAnswer(
+                  bubble,
+                  String(streamEvent.answer || ""),
+                  Array.isArray(streamEvent.citation_chunk_ids)
+                    ? streamEvent.citation_chunk_ids
+                    : []
+                );
+              } else {
+                bubble.textContent = String(streamEvent.answer || "");
+              }
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+          });
+          if (reportedError) throw new Error(reportedError);
         } catch (chatError) {
-          pendingMessage.remove();
-          const message = escapeHtml(chatError.message || "问答失败。");
-          appendChatMessage("agent", "Agent", `<span class="error">${message}</span>`);
-          answer.innerHTML = `<p class="error">${message}</p>`;
+          showChatError(chatError.message || "问答失败。", question, pendingMessage);
         } finally {
+          activeChatRequest = false;
           askButton.disabled = false;
           askButton.textContent = "发送";
           questionInput.focus();
         }
+      }
+
+      function retryChatQuestion(question, failedMessage) {
+        submitChatQuestion(question, failedMessage, false);
+      }
+
+      chatForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const question = questionInput.value.trim();
+        if (!question || activeChatRequest) return;
+        questionInput.value = "";
+        await submitChatQuestion(question);
       });
 
       questionInput.addEventListener("keydown", (event) => {

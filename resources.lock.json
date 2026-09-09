@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "resources": [
+    {
+      "id": "router-q4-gguf",
+      "kind": "git_lfs_file",
+      "destination": "models/router/qwen3-1.7b-router-sft-v3/Qwen3-1.7B-Router-SFT-V3-Q4_K_M.gguf",
+      "sha256": "1b86b90ea2adfe26a6db3b840b9131690f5e95d2580bee9aba9e24d3b8e3b634"
+    },
+    {
+      "id": "llama-cpp-windows-cpu",
+      "kind": "http_archive",
+      "url": "https://github.com/ggml-org/llama.cpp/releases/download/b10566/llama-b10566-bin-win-cpu-x64.zip",
+      "destination": ".tools/llama.cpp",
+      "sha256": "594f822c829ea097e1f0528a2b5b9f9953dd00254b48c44438104ddfb87a1ab9",
+      "tree_sha256": "75b2b350108fb8145623ee39fe4cc9d63929d79a5ebffbb74ef2400f86917d33",
+      "executable_sha256": "fb645781ce81b28a4bfe479c66c6377ec9fba30e8c57705ff55e44fd3073282d"
+    },
+    {
+      "id": "bge-m3",
+      "kind": "huggingface_snapshot",
+      "repo_id": "BAAI/bge-m3",
+      "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+      "destination": ".hf-cache/hub/models--BAAI--bge-m3",
+      "tree_sha256": "b44782cf146e01b04282d170a1361e3c57fb32a84f2c97f20a5e2785e602c660"
+    },
+    {
+      "id": "bge-reranker-base",
+      "kind": "huggingface_snapshot",
+      "repo_id": "BAAI/bge-reranker-base",
+      "revision": "2cfc18c9415c912f9d8155881c133215df768a70",
+      "destination": ".hf-cache/hub/models--BAAI--bge-reranker-base",
+      "tree_sha256": "e026184afc13aac4f98dbfe0e1bceab34cc68b8b1a3af8670b3d386247ff651c"
+    },
+    {
+      "id": "mineru-pdf-extract-kit",
+      "kind": "modelscope_snapshot",
+      "repo_id": "OpenDataLab/PDF-Extract-Kit-1.0",
+      "revision": "05eaf85cc4ddab92c2be61e10abec4586d25c1a6",
+      "destination": ".mineru/modelscope/models/OpenDataLab--PDF-Extract-Kit-1.0",
+      "tree_sha256": "e0b4ad4972fbb6b46d49f3acf00941a8d1018a532072bbbb4d747107ccfed38c"
+    },
+    {
+      "id": "mineru-figure-vlm",
+      "kind": "modelscope_snapshot",
+      "repo_id": "OpenDataLab/MinerU2.5-Pro-2605-1.2B",
+      "revision": "7a1ddf1dd3baa3c60507e33514c30e2cbfc1c3e2",
+      "destination": ".mineru/modelscope/models/OpenDataLab--MinerU2.5-Pro-2605-1.2B",
+      "tree_sha256": "04c31299a86fb4df181f55349b7f8bef6127f1629cf60137e7f487c27098d23c"
+    },
+    {
+      "id": "tiktoken-cl100k-base",
+      "kind": "http_file",
+      "url": "https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken",
+      "destination": ".cache/tiktoken/9b5ad71b2ce5302211f9c61530b329a4922fc6a4",
+      "sha256": "223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7"
+    },
+    {
+      "id": "tiktoken-o200k-base",
+      "kind": "http_file",
+      "url": "https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken",
+      "destination": ".cache/tiktoken/fb374d419588a4632f3f557e76b4b70aebbca790",
+      "sha256": "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d"
+    }
+  ]
+}

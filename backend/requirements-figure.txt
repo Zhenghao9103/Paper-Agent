@@ -1,0 +1,15 @@
+# Keep the standalone figure service CPU-only on Windows and Linux.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.6.0+cpu
+torchvision==0.21.0+cpu
+transformers==4.57.3
+mineru-vl-utils[transformers]==1.0.5
+accelerate==1.5.1
+numpy==1.26.4
+Pillow==11.3.0
+
+# HTTP service boundary used by backend.app.mineru_figure_service.
+fastapi==0.116.1
+uvicorn==0.35.0
+python-multipart==0.0.20
