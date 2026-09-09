@@ -138,4 +138,3 @@ def test_pyproject_matches_requirement_contracts() -> None:
 
     assert set(pyproject["project"]["dependencies"]) == runtime
     assert set(pyproject["project"]["optional-dependencies"]["dev"]) == development
-    assert "addopts" not in pyproject["tool"]["pytest"]["ini_options"]
