@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -212,6 +213,77 @@ def test_verified_llama_tree_is_reused_without_download(tmp_path: Path) -> None:
         raise AssertionError("verified archive tree must not be downloaded")
 
     assert install_archive(resource, tmp_path, download=download) == destination
+
+
+def _llama_archive_fixture(tmp_path: Path) -> tuple[Path, str, str]:
+    archive = tmp_path / "llama.zip"
+    with ZipFile(archive, "w") as output:
+        output.writestr("llama-server.exe", b"new-exe")
+        output.writestr("llama-server-impl.dll", b"new-dll")
+    expected = tmp_path / "expected"
+    expected.mkdir()
+    (expected / "llama-server.exe").write_bytes(b"new-exe")
+    (expected / "llama-server-impl.dll").write_bytes(b"new-dll")
+    return archive, hashlib.sha256(archive.read_bytes()).hexdigest(), sha256_tree(expected)
+
+
+def test_bad_llama_candidate_preserves_previous_install(tmp_path: Path) -> None:
+    destination = tmp_path / ".tools" / "llama.cpp"
+    destination.mkdir(parents=True)
+    (destination / "llama-server.exe").write_bytes(b"old-exe")
+    archive, archive_sha, _tree_sha = _llama_archive_fixture(tmp_path)
+    resource = Resource(
+        id="llama",
+        kind="http_archive",
+        destination=Path(".tools/llama.cpp"),
+        url="https://example.invalid/llama.zip",
+        sha256=archive_sha,
+        tree_sha256="b" * 64,
+        executable_sha256=hashlib.sha256(b"new-exe").hexdigest(),
+    )
+
+    with pytest.raises(ResourceInstallError, match="tree SHA256 mismatch"):
+        install_archive(
+            resource,
+            tmp_path,
+            download=lambda _url, target: shutil.copyfile(archive, target),
+        )
+
+    assert (destination / "llama-server.exe").read_bytes() == b"old-exe"
+
+
+def test_llama_replace_failure_restores_previous_install(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / ".tools" / "llama.cpp"
+    destination.mkdir(parents=True)
+    (destination / "llama-server.exe").write_bytes(b"old-exe")
+    archive, archive_sha, tree_sha = _llama_archive_fixture(tmp_path)
+    resource = Resource(
+        id="llama",
+        kind="http_archive",
+        destination=Path(".tools/llama.cpp"),
+        url="https://example.invalid/llama.zip",
+        sha256=archive_sha,
+        tree_sha256=tree_sha,
+        executable_sha256=hashlib.sha256(b"new-exe").hexdigest(),
+    )
+    original_replace = Path.replace
+
+    def fail_candidate_replace(source: Path, target: Path) -> Path:
+        if source.name == ".llama.cpp.candidate" and Path(target) == destination:
+            raise OSError("simulated replace failure")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(Path, "replace", fail_candidate_replace)
+    with pytest.raises(OSError, match="simulated replace failure"):
+        install_archive(
+            resource,
+            tmp_path,
+            download=lambda _url, target: shutil.copyfile(archive, target),
+        )
+
+    assert (destination / "llama-server.exe").read_bytes() == b"old-exe"
 
 
 def _read_env(path: Path) -> dict[str, str]:

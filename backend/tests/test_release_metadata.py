@@ -71,3 +71,38 @@ def test_setup_checks_every_native_command_exit_code() -> None:
     assert "& $venvPython" not in setup
     assert "& $figurePython" not in setup
     assert "& $git.Source" not in setup
+
+
+def test_invoke_native_preserves_stdout_and_throws_on_nonzero(tmp_path: Path) -> None:
+    setup = (ROOT / "setup.ps1").read_text(encoding="utf-8")
+    function_only = setup.split("$repoRoot =", 1)[0]
+    success = tmp_path / "success.ps1"
+    success.write_text(
+        function_only
+        + "$value = Invoke-Native -FilePath $PSHOME\\powershell.exe "
+        + "-ArgumentList @('-NoProfile', '-Command', 'Write-Output version-ok; exit 0')\n"
+        + "if ($value -ne 'version-ok') { throw 'stdout was not preserved' }\n",
+        encoding="utf-8",
+    )
+    failure = tmp_path / "failure.ps1"
+    failure.write_text(
+        function_only
+        + "Invoke-Native -FilePath $PSHOME\\powershell.exe "
+        + "-ArgumentList @('-NoProfile', '-Command', 'exit 9')\n",
+        encoding="utf-8",
+    )
+
+    assert subprocess.run(
+        ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", success],
+        check=False,
+        capture_output=True,
+        text=True,
+    ).returncode == 0
+    failed = subprocess.run(
+        ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", failure],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert failed.returncode != 0
+    assert "exit code 9" in (failed.stdout + failed.stderr)
