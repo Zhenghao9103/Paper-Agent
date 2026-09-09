@@ -39,7 +39,8 @@ FORBIDDEN_COMPONENTS = {
     "storage",
 }
 SECRET_RE = re.compile(
-    r"(?im)^(?:AGENT|OPENAI|ROUTER|JUDGE)_API_KEY\s*=\s*(?!$|your_|example|<)[^\s#]{8,}"
+    r"(?im)^(?:AGENT|OPENAI|ROUTER|JUDGE)_API_KEY[\t ]*=[\t ]*"
+    r"(?!$|your_|example|<)[^\t \r\n#]{8,}"
 )
 
 

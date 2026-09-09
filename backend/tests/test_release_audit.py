@@ -48,3 +48,14 @@ def test_audit_requires_selected_model_to_be_lfs(tmp_path) -> None:
     )
     assert result.ok is False
     assert result.missing_lfs == (SELECTED_MODEL,)
+
+
+def test_audit_does_not_join_empty_key_with_following_line(tmp_path) -> None:
+    result = audit_release_tree(
+        root=tmp_path,
+        tracked_files=(".env.example", SELECTED_MODEL),
+        lfs_files=(SELECTED_MODEL,),
+        blob_sizes={".env.example": 40},
+        staged_texts={".env.example": "AGENT_API_KEY=\nAGENT_BASE_URL=https://example.invalid\n"},
+    )
+    assert result.secret_findings == ()
