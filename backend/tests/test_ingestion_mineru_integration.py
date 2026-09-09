@@ -104,6 +104,7 @@ def test_parse_enriches_saved_figures_before_final_indexes(
     db_session.commit()
     events: list[str] = []
     manifests: list[dict[str, int]] = []
+    written_vectors: list[dict] = []
 
     @contextmanager
     def fake_pipeline(**_kwargs):
@@ -164,6 +165,7 @@ def test_parse_enriches_saved_figures_before_final_indexes(
 
     def fake_upsert_chunks(payload) -> None:
         events.append("vector")
+        written_vectors.extend(payload)
         assert [item["content"] for item in payload] == [
             "Preserved body text.",
             "Enriched figure summary.",
@@ -179,8 +181,15 @@ def test_parse_enriches_saved_figures_before_final_indexes(
     monkeypatch.setattr(ingestion, "upsert_chunks", fake_upsert_chunks)
     monkeypatch.setattr(
         ingestion,
+        "count_document_vectors",
+        lambda _document_id: len(written_vectors),
+    )
+    monkeypatch.setattr(
+        ingestion,
         "_write_pipeline_manifest",
-        lambda _document_id, _stage, _timings, counts: manifests.append(dict(counts)),
+        lambda _document_id, _stage, _timings, counts, **_kwargs: manifests.append(
+            dict(counts)
+        ),
     )
     monkeypatch.setattr(ingestion, "staging_dir", lambda: tmp_path / ".tmp")
 
