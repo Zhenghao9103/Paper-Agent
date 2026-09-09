@@ -35,6 +35,8 @@ FORBIDDEN_COMPONENTS = {
     "chroma",
     "data",
     "docs",
+    "evaluation",
+    "post_training",
     "reports",
     "storage",
 }
@@ -95,26 +97,38 @@ def _git(root: Path, *args: str) -> str:
     return result.stdout
 
 
-def audit_repository(root: Path) -> AuditResult:
-    tracked = tuple(line for line in _git(root, "ls-files").splitlines() if line)
-    lfs_output = _git(root, "lfs", "ls-files", "--name-only")
-    lfs = tuple(line for line in lfs_output.splitlines() if line)
+def _git_blob(root: Path, ref: str, relative: str) -> bytes:
+    result = subprocess.run(
+        ["git", "show", f"{ref}:{relative}"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    return result.stdout
+
+
+def audit_repository(root: Path, ref: str = "HEAD") -> AuditResult:
+    tracked = tuple(
+        line for line in _git(root, "ls-tree", "-r", "--name-only", ref).splitlines() if line
+    )
+    lfs: list[str] = []
     sizes: dict[str, int] = {}
     texts: dict[str, str] = {}
     for relative in tracked:
-        path = root / relative
-        if not path.is_file() or relative in lfs:
+        blob = _git_blob(root, ref, relative)
+        if blob.startswith(b"version https://git-lfs.github.com/spec/v1\n"):
+            lfs.append(relative)
             continue
-        sizes[relative] = path.stat().st_size
-        if path.stat().st_size <= 2 * 1024 * 1024:
+        sizes[relative] = len(blob)
+        if len(blob) <= 2 * 1024 * 1024:
             try:
-                texts[relative] = path.read_text(encoding="utf-8")
+                texts[relative] = blob.decode("utf-8")
             except UnicodeDecodeError:
                 pass
     return audit_release_tree(
         root=root,
         tracked_files=tracked,
-        lfs_files=lfs,
+        lfs_files=tuple(lfs),
         blob_sizes=sizes,
         staged_texts=texts,
     )

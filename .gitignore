@@ -18,6 +18,8 @@ backend/data/
 data/
 docs/
 reports/
+evaluation/
+post_training/
 storage/uploads/*
 storage/pages/*
 storage/exports/*
