@@ -35,7 +35,9 @@ def _structured_data(element: DocumentElement) -> dict:
 
 def _is_enriched(element: DocumentElement) -> bool:
     structured = _structured_data(element)
-    return bool(structured.get("summary") and structured.get("description_model"))
+    return bool(
+        element.parse_status == "success" and structured.get("description_model")
+    )
 
 
 def _record_enrichment_failure(
@@ -162,8 +164,8 @@ def enrich_figure(db: Session, document: Document, element: DocumentElement) -> 
                 python_executable=settings.mineru_figure_python,
                 startup_timeout_seconds=settings.mineru_figure_startup_timeout_seconds,
             )
-        _manager.ensure_started()
         try:
+            _manager.ensure_started()
             result = MinerUFigureClient(
                 settings.mineru_figure_service_url,
                 timeout_seconds=settings.mineru_figure_request_timeout_seconds,
@@ -177,7 +179,16 @@ def enrich_figure(db: Session, document: Document, element: DocumentElement) -> 
             _record_enrichment_failure(db, element, exc)
             raise
         finally:
-            _manager.schedule_idle_close(settings.mineru_figure_idle_timeout_seconds)
+            try:
+                _manager.schedule_idle_close(
+                    settings.mineru_figure_idle_timeout_seconds
+                )
+            except Exception:
+                logger.warning(
+                    "Figure service idle close failed for document %s",
+                    document.id,
+                    exc_info=True,
+                )
     return _persist_figure_enrichment(
         db,
         document,

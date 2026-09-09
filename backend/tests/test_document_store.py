@@ -456,6 +456,248 @@ def test_enrich_document_figures_reuses_service_and_isolates_each_failure(
     assert json.loads(broken.structured_data_json)["enrichment_error"] == "broken figure"
 
 
+def test_single_figure_with_empty_summary_is_not_described_or_chunked_twice(
+    parsing_db,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document = _document()
+    parsing_db.add(document)
+    parsing_db.flush()
+    image = tmp_path / "empty-summary-single.png"
+    image.write_bytes(b"image")
+    element = DocumentElement(
+        document_id=document.id,
+        element_uid="figure-empty-summary-single",
+        element_type="figure",
+        page_number=1,
+        image_path=str(image),
+        structured_data_json="{}",
+        parse_status="pending",
+    )
+    parsing_db.add(element)
+    parsing_db.commit()
+    calls = {"describe": 0}
+
+    class FakeManager:
+        def ensure_started(self) -> None:
+            pass
+
+        def schedule_idle_close(self, _seconds: float) -> None:
+            pass
+
+    class FakeClient:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def describe(self, *_args, **_kwargs) -> FigureDescriptionResult:
+            calls["describe"] += 1
+            return FigureDescriptionResult(
+                description=FigureDescription(figure_type="diagram", summary=""),
+                model="fake-model",
+                latency_ms=1,
+            )
+
+    settings = SimpleNamespace(
+        mineru_figure_service_url="http://127.0.0.1:8002",
+        mineru_figure_request_timeout_seconds=3.0,
+        mineru_figure_idle_timeout_seconds=4.0,
+    )
+    monkeypatch.setattr(figure_enrichment, "get_settings", lambda: settings)
+    monkeypatch.setattr(figure_enrichment, "_manager", FakeManager())
+    monkeypatch.setattr(figure_enrichment, "MinerUFigureClient", FakeClient)
+    monkeypatch.setattr(figure_enrichment, "index_chunk", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(figure_enrichment, "upsert_chunk", lambda **_kwargs: None)
+
+    figure_enrichment.enrich_figure(parsing_db, document, element)
+    figure_enrichment.enrich_figure(parsing_db, document, element)
+
+    chunks = list(
+        parsing_db.scalars(
+            select(DocumentChunk).where(DocumentChunk.document_id == document.id)
+        )
+    )
+    assert calls["describe"] == 1
+    assert len(chunks) == 1
+
+
+def test_batch_figure_with_empty_summary_is_not_described_or_chunked_twice(
+    parsing_db,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document = _document()
+    parsing_db.add(document)
+    parsing_db.flush()
+    image = tmp_path / "empty-summary-batch.png"
+    image.write_bytes(b"image")
+    element = DocumentElement(
+        document_id=document.id,
+        element_uid="figure-empty-summary-batch",
+        element_type="figure",
+        page_number=1,
+        image_path=str(image),
+        structured_data_json="{}",
+        parse_status="pending",
+    )
+    parsing_db.add(element)
+    parsing_db.commit()
+    calls = {"describe": 0}
+
+    class FakeManager:
+        def __init__(self, **_kwargs) -> None:
+            pass
+
+        def ensure_started(self) -> None:
+            pass
+
+        def schedule_idle_close(self, _seconds: float) -> None:
+            pass
+
+    class FakeClient:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def describe(self, *_args, **_kwargs) -> FigureDescriptionResult:
+            calls["describe"] += 1
+            return FigureDescriptionResult(
+                description=FigureDescription(figure_type="diagram", summary=""),
+                model="fake-model",
+                latency_ms=1,
+            )
+
+    settings = SimpleNamespace(
+        mineru_figure_enabled=True,
+        mineru_root=str(tmp_path),
+        mineru_figure_manifest=str(tmp_path / "manifest.json"),
+        mineru_figure_service_url="http://127.0.0.1:8002",
+        mineru_figure_python=str(tmp_path / "python.exe"),
+        mineru_figure_startup_timeout_seconds=2.0,
+        mineru_figure_request_timeout_seconds=3.0,
+        mineru_figure_idle_timeout_seconds=4.0,
+    )
+    monkeypatch.setattr(figure_enrichment, "get_settings", lambda: settings)
+    monkeypatch.setattr(figure_enrichment, "MinerUFigureServiceManager", FakeManager)
+    monkeypatch.setattr(figure_enrichment, "MinerUFigureClient", FakeClient)
+
+    assert figure_enrichment.enrich_document_figures(parsing_db, document) == 1
+    assert figure_enrichment.enrich_document_figures(parsing_db, document) == 0
+
+    chunks = list(
+        parsing_db.scalars(
+            select(DocumentChunk).where(DocumentChunk.document_id == document.id)
+        )
+    )
+    assert calls["describe"] == 1
+    assert len(chunks) == 1
+
+
+def test_single_figure_start_failure_keeps_primary_error_when_idle_close_fails(
+    parsing_db,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document = _document()
+    parsing_db.add(document)
+    parsing_db.flush()
+    image = tmp_path / "start-failure.png"
+    image.write_bytes(b"image")
+    element = DocumentElement(
+        document_id=document.id,
+        element_uid="figure-start-failure",
+        element_type="figure",
+        image_path=str(image),
+        structured_data_json="{}",
+        parse_status="pending",
+    )
+    parsing_db.add(element)
+    parsing_db.commit()
+    calls: list[str] = []
+
+    class FakeManager:
+        def ensure_started(self) -> None:
+            calls.append("start")
+            raise RuntimeError("start failed")
+
+        def schedule_idle_close(self, _seconds: float) -> None:
+            calls.append("idle")
+            raise RuntimeError("idle failed")
+
+    settings = SimpleNamespace(
+        mineru_figure_service_url="http://127.0.0.1:8002",
+        mineru_figure_request_timeout_seconds=3.0,
+        mineru_figure_idle_timeout_seconds=4.0,
+    )
+    monkeypatch.setattr(figure_enrichment, "get_settings", lambda: settings)
+    monkeypatch.setattr(figure_enrichment, "_manager", FakeManager())
+
+    with pytest.raises(RuntimeError, match="start failed"):
+        figure_enrichment.enrich_figure(parsing_db, document, element)
+
+    assert calls == ["start", "idle"]
+    assert element.parse_status == "warning"
+    assert json.loads(element.structured_data_json)["enrichment_error"] == "start failed"
+
+
+def test_single_figure_idle_close_failure_does_not_fail_successful_enrichment(
+    parsing_db,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document = _document()
+    parsing_db.add(document)
+    parsing_db.flush()
+    image = tmp_path / "idle-failure.png"
+    image.write_bytes(b"image")
+    element = DocumentElement(
+        document_id=document.id,
+        element_uid="figure-idle-failure",
+        element_type="figure",
+        image_path=str(image),
+        structured_data_json="{}",
+        parse_status="pending",
+    )
+    parsing_db.add(element)
+    parsing_db.commit()
+    calls: list[str] = []
+
+    class FakeManager:
+        def ensure_started(self) -> None:
+            calls.append("start")
+
+        def schedule_idle_close(self, _seconds: float) -> None:
+            calls.append("idle")
+            raise RuntimeError("idle failed")
+
+    class FakeClient:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def describe(self, *_args, **_kwargs) -> FigureDescriptionResult:
+            calls.append("describe")
+            return FigureDescriptionResult(
+                description=FigureDescription(summary="Figure summary."),
+                model="fake-model",
+                latency_ms=1,
+            )
+
+    settings = SimpleNamespace(
+        mineru_figure_service_url="http://127.0.0.1:8002",
+        mineru_figure_request_timeout_seconds=3.0,
+        mineru_figure_idle_timeout_seconds=4.0,
+    )
+    monkeypatch.setattr(figure_enrichment, "get_settings", lambda: settings)
+    monkeypatch.setattr(figure_enrichment, "_manager", FakeManager())
+    monkeypatch.setattr(figure_enrichment, "MinerUFigureClient", FakeClient)
+    monkeypatch.setattr(figure_enrichment, "index_chunk", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(figure_enrichment, "upsert_chunk", lambda **_kwargs: None)
+
+    result = figure_enrichment.enrich_figure(parsing_db, document, element)
+
+    assert result.parse_status == "success"
+    assert calls == ["start", "describe", "idle"]
+
+
 def test_read_schemas_decode_json_and_preserve_nullable_fields(parsing_db):
     run = DocumentParseRun(
         id=1,
