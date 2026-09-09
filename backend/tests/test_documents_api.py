@@ -1,6 +1,7 @@
 import json
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import fitz
 from backend.app.db.session import get_db
@@ -373,8 +374,8 @@ def test_upload_fails_when_vector_count_is_incomplete(
     monkeypatch.setattr(ingestion, "upsert_chunks", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         ingestion,
-        "document_vector_ids",
-        lambda _document_id: set(),
+        "document_vector_fingerprints",
+        lambda _document_id: {},
         raising=False,
     )
 
@@ -411,8 +412,8 @@ def test_upload_fails_when_vector_ids_are_wrong_but_count_matches(
     monkeypatch.setattr(ingestion, "upsert_chunks", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         ingestion,
-        "document_vector_ids",
-        lambda _document_id: {"stale-vector-id"},
+        "document_vector_fingerprints",
+        lambda _document_id: {"stale-vector-id": "stale-content-hash"},
         raising=False,
     )
 
@@ -422,6 +423,40 @@ def test_upload_fails_when_vector_ids_are_wrong_but_count_matches(
             "file": (
                 "wrong-vector-ids.pdf",
                 make_pdf_bytes("One new chunk must not be replaced by one stale vector."),
+                "application/pdf",
+            )
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "failed"
+
+
+def test_upload_fails_when_vector_ids_match_but_content_hash_is_stale(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    written: list[dict] = []
+
+    def fake_upsert(payload) -> None:
+        written.extend(payload)
+
+    monkeypatch.setattr(ingestion, "upsert_chunks", fake_upsert)
+    monkeypatch.setattr(
+        ingestion,
+        "document_vector_fingerprints",
+        lambda _document_id: {
+            str(item["chunk_id"]): "stale-content-hash" for item in written
+        },
+        raising=False,
+    )
+
+    response = client.post(
+        "/api/documents/upload",
+        files={
+            "file": (
+                "stale-vector-content.pdf",
+                make_pdf_bytes("Matching IDs must still represent current content."),
                 "application/pdf",
             )
         },
@@ -466,6 +501,32 @@ def test_vector_failure_manifest_error_keeps_database_failure_authoritative(
     quality = client.get(f"/api/documents/{created['id']}/quality")
     assert quality.status_code == 200
     assert quality.json()["pipeline_stage"] == "failed"
+
+
+def test_vector_failure_status_commit_retries_once() -> None:
+    class FlakySession:
+        def __init__(self) -> None:
+            self.commit_calls = 0
+            self.rollback_calls = 0
+
+        def add(self, _document) -> None:
+            return None
+
+        def commit(self) -> None:
+            self.commit_calls += 1
+            if self.commit_calls == 1:
+                raise OSError("database temporarily locked")
+
+        def rollback(self) -> None:
+            self.rollback_calls += 1
+
+    db = FlakySession()
+    document = SimpleNamespace(id=7, status="parsed")
+
+    assert ingestion._persist_failed_status(db, document) is True
+    assert document.status == "failed"
+    assert db.commit_calls == 2
+    assert db.rollback_calls == 1
 
 
 def test_upload_keeps_bm25_index_when_vector_index_fails(

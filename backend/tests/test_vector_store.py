@@ -143,6 +143,26 @@ def test_document_vector_ids_returns_exact_ids(monkeypatch) -> None:
     assert vector_store.document_vector_ids(7) == {"chunk-1", "chunk-2"}
 
 
+def test_document_vector_fingerprints_pairs_ids_with_content_hashes(monkeypatch) -> None:
+    class FakeCollection:
+        def get(self, **kwargs):
+            assert kwargs == {"where": {"document_id": 7}, "include": ["metadatas"]}
+            return {
+                "ids": ["chunk-2", "chunk-1"],
+                "metadatas": [
+                    {"content_sha256": "hash-2"},
+                    {"content_sha256": "hash-1"},
+                ],
+            }
+
+    monkeypatch.setattr(vector_store, "get_paper_chunks_collection", lambda: FakeCollection())
+
+    assert vector_store.document_vector_fingerprints(7) == {
+        "chunk-1": "hash-1",
+        "chunk-2": "hash-2",
+    }
+
+
 class FakeBgeM3Model:
     def __init__(self) -> None:
         self.calls: list[dict] = []

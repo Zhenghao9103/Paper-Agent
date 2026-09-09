@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from contextlib import contextmanager
+from hashlib import sha256
 from pathlib import Path
 from shutil import rmtree
 from threading import Lock
@@ -30,7 +31,7 @@ from ..models.parsing import DocumentChunkDetail, DocumentElement
 from ..rag.bm25_store import delete_document_index, index_chunk
 from ..rag.vector_store import (
     delete_document_chunks,
-    document_vector_ids,
+    document_vector_fingerprints,
     upsert_chunks,
 )
 from .document_store import DocumentStore
@@ -38,6 +39,25 @@ from .figure_enrichment import enrich_document_figures
 from .mineru_figure_runtime import MinerUFigureServiceManager
 
 logger = logging.getLogger(__name__)
+
+
+def _persist_failed_status(db: Session, document: Document) -> bool:
+    for attempt in range(2):
+        try:
+            document.status = "failed"
+            db.add(document)
+            db.commit()
+            return True
+        except Exception:
+            db.rollback()
+            logger.warning(
+                "Document %s failure status commit attempt %s failed",
+                document.id,
+                attempt + 1,
+                exc_info=True,
+            )
+    document.status = "failed"
+    return False
 
 
 def run_primary_with_fallback(
@@ -273,42 +293,46 @@ def parse_and_store_document(db: Session, document: Document) -> bool:
     except Exception:
         logger.warning("Document %s committed but refresh failed", document.id, exc_info=True)
 
-    index_payload: list[dict[str, Any]] = [
-        {
-            "chunk_id": str(row.id),
-            "content": row.content,
-            "metadata": {
-                "chunk_id": row.id,
-                "document_id": document.id,
-                "title": document.title,
-                "page_number": row.page_number,
-                "chunk_index": row.chunk_index,
-                "file_type": document.file_type,
-                "image_path": page_images.get(row.page_number),
-            },
-        }
-        for row in rows
-    ]
+    index_payload: list[dict[str, Any]] = []
+    for row in rows:
+        content_hash = sha256(row.content.encode("utf-8")).hexdigest()
+        index_payload.append(
+            {
+                "chunk_id": str(row.id),
+                "content": row.content,
+                "metadata": {
+                    "chunk_id": row.id,
+                    "document_id": document.id,
+                    "title": document.title,
+                    "page_number": row.page_number,
+                    "chunk_index": row.chunk_index,
+                    "file_type": document.file_type,
+                    "image_path": page_images.get(row.page_number),
+                    "content_sha256": content_hash,
+                },
+            }
+        )
     try:
         if index_payload:
             upsert_chunks(index_payload)
         else:
             delete_document_chunks(document.id)
-        expected_vector_ids = {str(item["chunk_id"]) for item in index_payload}
-        actual_vector_ids = document_vector_ids(document.id)
-        if actual_vector_ids != expected_vector_ids:
+        expected_fingerprints = {
+            str(item["chunk_id"]): str(item["metadata"]["content_sha256"])
+            for item in index_payload
+        }
+        actual_fingerprints = document_vector_fingerprints(document.id)
+        if actual_fingerprints != expected_fingerprints:
             raise RuntimeError(
-                f"Vector ID mismatch for document {document.id}: "
-                f"expected {len(expected_vector_ids)}, got {len(actual_vector_ids)}"
+                f"Vector fingerprint mismatch for document {document.id}: "
+                f"expected {len(expected_fingerprints)}, got {len(actual_fingerprints)}"
             )
     except Exception:
         logger.warning("Vector indexing failed for document %s", document.id, exc_info=True)
         timings["vector_embedding"] = round((perf_counter() - vector_started) * 1000)
         timings["total"] = round((perf_counter() - total_started) * 1000)
         db.rollback()
-        document.status = "failed"
-        db.add(document)
-        db.commit()
+        _persist_failed_status(db, document)
         try:
             _write_pipeline_manifest(
                 document.id,

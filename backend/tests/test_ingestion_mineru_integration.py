@@ -181,8 +181,11 @@ def test_parse_enriches_saved_figures_before_final_indexes(
     monkeypatch.setattr(ingestion, "upsert_chunks", fake_upsert_chunks)
     monkeypatch.setattr(
         ingestion,
-        "document_vector_ids",
-        lambda _document_id: {str(item["chunk_id"]) for item in written_vectors},
+        "document_vector_fingerprints",
+        lambda _document_id: {
+            str(item["chunk_id"]): str(item["metadata"]["content_sha256"])
+            for item in written_vectors
+        },
     )
     monkeypatch.setattr(
         ingestion,

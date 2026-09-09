@@ -225,6 +225,19 @@ def document_vector_ids(document_id: int) -> set[str]:
     return {str(vector_id) for vector_id in result.get("ids") or []}
 
 
+def document_vector_fingerprints(document_id: int) -> dict[str, str]:
+    result = get_paper_chunks_collection().get(
+        where={"document_id": document_id},
+        include=["metadatas"],
+    )
+    ids = result.get("ids") or []
+    metadatas = result.get("metadatas") or []
+    return {
+        str(vector_id): str(metadata.get("content_sha256", ""))
+        for vector_id, metadata in zip(ids, metadatas, strict=True)
+    }
+
+
 def query_chunks(query: str, document_id: int | None = None, limit: int = 5) -> list[dict]:
     collection = get_paper_chunks_collection()
     where = {"document_id": document_id} if document_id is not None else None
