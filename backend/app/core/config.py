@@ -50,6 +50,9 @@ def configure_huggingface_cache(default_root: Path = DEFAULT_HUGGINGFACE_CACHE_D
     os.environ.setdefault("HF_HOME", str(root))
     os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(root / "hub"))
     os.environ.setdefault("TRANSFORMERS_CACHE", str(root / "transformers"))
+    os.environ.setdefault(
+        "TIKTOKEN_CACHE_DIR", str(PROJECT_ROOT / ".cache" / "tiktoken")
+    )
 
 
 configure_huggingface_cache()

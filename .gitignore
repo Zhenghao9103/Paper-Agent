@@ -15,13 +15,19 @@ coverage/
 
 # Local app data
 backend/data/
+data/
+docs/
+reports/
 storage/uploads/*
 storage/pages/*
 storage/exports/*
 chroma/
 .hf-cache/
+.mineru/
+.cache/
 .tmp/
 .tmp-current/
+.worktrees/
 
 # Keep storage directories
 !storage/uploads/.gitkeep
@@ -38,3 +44,14 @@ chroma/
 Thumbs.db
 .vscode/
 .idea/
+
+# Publish exactly one final Router model; ignore every other model artifact.
+models/**
+!models/router/
+models/router/**
+!models/router/qwen3-1.7b-router-sft-v3/
+models/router/qwen3-1.7b-router-sft-v3/**
+!models/router/qwen3-1.7b-router-sft-v3/Qwen3-1.7B-Router-SFT-V3-Q4_K_M.gguf
+
+# Local llama.cpp runtime
+.tools/

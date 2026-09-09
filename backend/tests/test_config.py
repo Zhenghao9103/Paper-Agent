@@ -378,6 +378,7 @@ def test_agentic_rag_settings_reject_inconsistent_limits(overrides: dict) -> Non
 def test_config_sets_default_huggingface_cache_in_project_root(monkeypatch) -> None:
     for key in config.HUGGINGFACE_CACHE_ENV_VARS:
         monkeypatch.delenv(key, raising=False)
+    monkeypatch.delenv("TIKTOKEN_CACHE_DIR", raising=False)
 
     config.configure_huggingface_cache()
 
@@ -387,6 +388,9 @@ def test_config_sets_default_huggingface_cache_in_project_root(monkeypatch) -> N
     )
     assert config.os.environ["TRANSFORMERS_CACHE"] == str(
         config.PROJECT_ROOT / ".hf-cache" / "transformers"
+    )
+    assert config.os.environ["TIKTOKEN_CACHE_DIR"] == str(
+        config.PROJECT_ROOT / ".cache" / "tiktoken"
     )
 
 
