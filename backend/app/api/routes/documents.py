@@ -351,7 +351,12 @@ def get_document_quality(document_id: int, db: Session = Depends(get_db)) -> dic
         "text_coverage": run.text_coverage,
         "warnings": run.warnings_json or [],
         "errors": [],
-        "pipeline_stage": manifest.get("pipeline_stage", document.status),
+        "pipeline_stage": (
+            document.status
+            if document.status == "failed"
+            and not str(manifest.get("pipeline_stage", "")).endswith("_failed")
+            else manifest.get("pipeline_stage", document.status)
+        ),
         "timings_ms": manifest.get("timings_ms", {}),
         "counts": manifest.get("counts", {}),
     }

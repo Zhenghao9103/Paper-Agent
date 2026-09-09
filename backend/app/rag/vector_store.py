@@ -214,11 +214,15 @@ def delete_document_chunks(document_id: int) -> None:
 
 
 def count_document_vectors(document_id: int) -> int:
+    return len(document_vector_ids(document_id))
+
+
+def document_vector_ids(document_id: int) -> set[str]:
     result = get_paper_chunks_collection().get(
         where={"document_id": document_id},
         include=[],
     )
-    return len(result.get("ids") or [])
+    return {str(vector_id) for vector_id in result.get("ids") or []}
 
 
 def query_chunks(query: str, document_id: int | None = None, limit: int = 5) -> list[dict]:

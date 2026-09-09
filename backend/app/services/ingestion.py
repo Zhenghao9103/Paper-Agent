@@ -29,8 +29,8 @@ from ..models.page import DocumentPage
 from ..models.parsing import DocumentChunkDetail, DocumentElement
 from ..rag.bm25_store import delete_document_index, index_chunk
 from ..rag.vector_store import (
-    count_document_vectors,
     delete_document_chunks,
+    document_vector_ids,
     upsert_chunks,
 )
 from .document_store import DocumentStore
@@ -294,11 +294,12 @@ def parse_and_store_document(db: Session, document: Document) -> bool:
             upsert_chunks(index_payload)
         else:
             delete_document_chunks(document.id)
-        vector_count = count_document_vectors(document.id)
-        if vector_count != len(index_payload):
+        expected_vector_ids = {str(item["chunk_id"]) for item in index_payload}
+        actual_vector_ids = document_vector_ids(document.id)
+        if actual_vector_ids != expected_vector_ids:
             raise RuntimeError(
-                f"Vector count mismatch for document {document.id}: "
-                f"expected {len(index_payload)}, got {vector_count}"
+                f"Vector ID mismatch for document {document.id}: "
+                f"expected {len(expected_vector_ids)}, got {len(actual_vector_ids)}"
             )
     except Exception:
         logger.warning("Vector indexing failed for document %s", document.id, exc_info=True)
@@ -308,13 +309,20 @@ def parse_and_store_document(db: Session, document: Document) -> bool:
         document.status = "failed"
         db.add(document)
         db.commit()
-        _write_pipeline_manifest(
-            document.id,
-            "vector_failed",
-            timings,
-            counts,
-            error_code="vector_index_failed",
-        )
+        try:
+            _write_pipeline_manifest(
+                document.id,
+                "vector_failed",
+                timings,
+                counts,
+                error_code="vector_index_failed",
+            )
+        except OSError:
+            logger.warning(
+                "Document %s vector failure manifest could not be written",
+                document.id,
+                exc_info=True,
+            )
         return False
     timings["vector_embedding"] = round((perf_counter() - vector_started) * 1000)
     timings["total"] = round((perf_counter() - total_started) * 1000)
@@ -413,7 +421,12 @@ def _write_pipeline_manifest(
     }
     if error_code is not None:
         payload["error_code"] = error_code
-    path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    temporary = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
+    try:
+        temporary.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)

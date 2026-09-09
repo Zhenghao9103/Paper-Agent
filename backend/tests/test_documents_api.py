@@ -373,8 +373,8 @@ def test_upload_fails_when_vector_count_is_incomplete(
     monkeypatch.setattr(ingestion, "upsert_chunks", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(
         ingestion,
-        "count_document_vectors",
-        lambda _document_id: 0,
+        "document_vector_ids",
+        lambda _document_id: set(),
         raising=False,
     )
 
@@ -402,6 +402,70 @@ def test_upload_fails_when_vector_count_is_incomplete(
     )
     assert manifest["pipeline_stage"] == "vector_failed"
     assert manifest["error_code"] == "vector_index_failed"
+
+
+def test_upload_fails_when_vector_ids_are_wrong_but_count_matches(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(ingestion, "upsert_chunks", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        ingestion,
+        "document_vector_ids",
+        lambda _document_id: {"stale-vector-id"},
+        raising=False,
+    )
+
+    response = client.post(
+        "/api/documents/upload",
+        files={
+            "file": (
+                "wrong-vector-ids.pdf",
+                make_pdf_bytes("One new chunk must not be replaced by one stale vector."),
+                "application/pdf",
+            )
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "failed"
+
+
+def test_vector_failure_manifest_error_keeps_database_failure_authoritative(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    original_write_manifest = ingestion._write_pipeline_manifest
+
+    def fail_only_vector_manifest(document_id, stage, timings, counts, **kwargs):
+        if stage == "vector_failed":
+            raise OSError("manifest unavailable")
+        return original_write_manifest(document_id, stage, timings, counts, **kwargs)
+
+    monkeypatch.setattr(
+        ingestion,
+        "upsert_chunks",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("offline")),
+    )
+    monkeypatch.setattr(ingestion, "_write_pipeline_manifest", fail_only_vector_manifest)
+
+    response = client.post(
+        "/api/documents/upload",
+        files={
+            "file": (
+                "manifest-failure.pdf",
+                make_pdf_bytes("The database failure state is authoritative."),
+                "application/pdf",
+            )
+        },
+    )
+
+    assert response.status_code == 201
+    created = response.json()
+    assert created["status"] == "failed"
+    quality = client.get(f"/api/documents/{created['id']}/quality")
+    assert quality.status_code == 200
+    assert quality.json()["pipeline_stage"] == "failed"
 
 
 def test_upload_keeps_bm25_index_when_vector_index_fails(

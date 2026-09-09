@@ -133,6 +133,16 @@ def test_count_document_vectors_filters_by_document_id(monkeypatch) -> None:
     assert calls == [{"where": {"document_id": 7}, "include": []}]
 
 
+def test_document_vector_ids_returns_exact_ids(monkeypatch) -> None:
+    class FakeCollection:
+        def get(self, **_kwargs):
+            return {"ids": ["chunk-2", "chunk-1"]}
+
+    monkeypatch.setattr(vector_store, "get_paper_chunks_collection", lambda: FakeCollection())
+
+    assert vector_store.document_vector_ids(7) == {"chunk-1", "chunk-2"}
+
+
 class FakeBgeM3Model:
     def __init__(self) -> None:
         self.calls: list[dict] = []
