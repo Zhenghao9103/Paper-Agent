@@ -39,6 +39,8 @@ FORBIDDEN_COMPONENTS = {
     "post_training",
     "reports",
     "storage",
+    "tests",
+    "__tests__",
 }
 SECRET_RE = re.compile(
     r"(?im)^(?:AGENT|OPENAI|ROUTER|JUDGE)_API_KEY[\t ]*=[\t ]*"
@@ -71,6 +73,9 @@ def audit_release_tree(
             path
             for path in normalized
             if any(part in FORBIDDEN_COMPONENTS for part in PurePosixPath(path).parts)
+            or PurePosixPath(path).name.startswith("test_")
+            or ".test." in PurePosixPath(path).name
+            or ".spec." in PurePosixPath(path).name
         )
     )
     unexpected_roots = tuple(

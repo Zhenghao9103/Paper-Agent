@@ -93,13 +93,6 @@ setup.ps1            Windows 完整安装入口
 - 外部资源下载中断：直接重跑 `setup.ps1`，临时文件不会替换已完成资源。
 - API 无法生成回答：检查 `.env` 中 `AGENT_API_KEY`、`AGENT_BASE_URL` 与 `AGENT_MODEL`。
 
-## 开发测试
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r backend\requirements-dev.txt
-.\.venv\Scripts\python.exe -m pytest backend\tests -q
-```
-
 ## License
 
 [MIT](LICENSE)

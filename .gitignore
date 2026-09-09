@@ -1,5 +1,8 @@
 # Python
 __pycache__/
+backend/tests/
+frontend/src/**/*.test.*
+frontend/src/**/*.spec.*
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
