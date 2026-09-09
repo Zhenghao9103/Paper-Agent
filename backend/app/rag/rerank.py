@@ -3,7 +3,7 @@ from copy import deepcopy
 from functools import lru_cache
 from typing import Any
 
-from ..core.paths import hf_model_snapshot
+from ..core.paths import require_hf_model_snapshot
 
 BGE_RERANKER_MODEL_NAME = "BAAI/bge-reranker-base"
 BGE_CPU_BATCH_SIZE = 4
@@ -18,7 +18,7 @@ def _get_bge_reranker():
             "BGE-Reranker requires FlagEmbedding. Install backend requirements before reranking."
         ) from exc
     return FlagReranker(
-        hf_model_snapshot(BGE_RERANKER_MODEL_NAME), use_fp16=False
+        require_hf_model_snapshot(BGE_RERANKER_MODEL_NAME), use_fp16=False
     )
 
 

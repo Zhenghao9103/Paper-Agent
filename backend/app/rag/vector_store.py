@@ -7,7 +7,7 @@ from typing import Any, Literal
 import chromadb
 from chromadb.api.models.Collection import Collection
 
-from ..core.paths import chroma_dir
+from ..core.paths import chroma_dir, require_hf_model_snapshot
 
 PAPER_CHUNKS_COLLECTION = "paper_chunks"
 USER_MEMORIES_COLLECTION = "user_memories"
@@ -100,9 +100,7 @@ def _get_bge_m3_model():
             "BGE-M3 embeddings require sentence-transformers. "
             "Install backend requirements before indexing documents."
         ) from exc
-    from ..core.paths import hf_model_snapshot
-
-    model = SentenceTransformer(hf_model_snapshot(BGE_M3_MODEL_NAME))
+    model = SentenceTransformer(require_hf_model_snapshot(BGE_M3_MODEL_NAME))
     # median chunk is ~600 chars but a few formula/table chunks exceed 30k
     # chars; the 8192-token default pads whole batches to the longest member
     # and makes CPU encoding intractable. 512 tokens covers >99% of chunks.

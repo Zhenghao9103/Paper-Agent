@@ -47,27 +47,29 @@ def chroma_dir() -> Path:
     return resolve_project_path(get_settings().chroma_dir)
 
 
-def hf_model_snapshot(model_name: str) -> str:
-    """Resolve a model name to its local .hf-cache snapshot when available.
-
-    Loading by absolute path bypasses HF_* cache environment variables and
-    hub connectivity checks entirely, which is what a local-first setup with
-    pre-downloaded models needs. Falls back to the model name (normal hub
-    resolution) when no complete snapshot exists.
-    """
-
+def require_hf_model_snapshot(model_name: str) -> str:
+    """Return the newest complete local snapshot or fail without Hub fallback."""
     repo_dir = "models--" + model_name.replace("/", "--")
     snapshots = PROJECT_ROOT / ".hf-cache" / "hub" / repo_dir / "snapshots"
-    if not snapshots.is_dir():
-        return model_name
-    candidates = [
-        path
-        for path in snapshots.iterdir()
-        if path.is_dir() and (path / "config.json").is_file()
-    ]
-    if not candidates:
-        return model_name
-    return str(max(candidates, key=lambda path: len(list(path.iterdir()))))
+    if snapshots.is_dir():
+        candidates = [
+            path
+            for path in snapshots.iterdir()
+            if path.is_dir()
+            and (path / "config.json").is_file()
+            and (
+                (path / "model.safetensors").is_file()
+                or (path / "pytorch_model.bin").is_file()
+            )
+        ]
+        if candidates:
+            selected = max(candidates, key=lambda path: (path.stat().st_mtime_ns, path.name))
+            return str(selected.resolve())
+
+    raise RuntimeError(
+        f"Required local model snapshot is missing or incomplete: {model_name}. "
+        "Run setup.ps1 to install retrieval models before starting PaperMind."
+    )
 
 
 def ensure_runtime_dirs() -> None:
