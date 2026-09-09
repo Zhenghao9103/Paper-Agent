@@ -13,6 +13,7 @@
       "url": "https://github.com/ggml-org/llama.cpp/releases/download/b10566/llama-b10566-bin-win-cpu-x64.zip",
       "destination": ".tools/llama.cpp",
       "sha256": "594f822c829ea097e1f0528a2b5b9f9953dd00254b48c44438104ddfb87a1ab9",
+      "tree_sha256": "75b2b350108fb8145623ee39fe4cc9d63929d79a5ebffbb74ef2400f86917d33",
       "executable_sha256": "fb645781ce81b28a4bfe479c66c6377ec9fba30e8c57705ff55e44fd3073282d"
     },
     {

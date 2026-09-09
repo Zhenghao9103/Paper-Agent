@@ -251,6 +251,13 @@ def install_snapshot(
 ) -> Path:
     if not resource.repo_id or not resource.revision:
         raise ResourceInstallError(f"{resource.id} is missing repo_id or revision")
+    installed = root / resource.destination / "snapshots" / resource.revision
+    if (
+        resource.tree_sha256
+        and installed.is_dir()
+        and sha256_tree(installed) == resource.tree_sha256
+    ):
+        return installed
     cache_dir = (root / ".hf-cache" / "hub").resolve()
     snapshot = Path(
         snapshot_download(
@@ -265,7 +272,19 @@ def install_snapshot(
     return snapshot
 
 
-def _install_archive(resource: Resource, root: Path) -> Path:
+def install_archive(
+    resource: Resource,
+    root: Path,
+    *,
+    download: Callable[[str, Path], None] = _download,
+) -> Path:
+    destination = root / resource.destination
+    if (
+        resource.tree_sha256
+        and destination.is_dir()
+        and sha256_tree(destination) == resource.tree_sha256
+    ):
+        return destination
     downloads = root / ".cache" / "downloads"
     downloads.mkdir(parents=True, exist_ok=True)
     archive_resource = Resource(
@@ -275,31 +294,53 @@ def _install_archive(resource: Resource, root: Path) -> Path:
         url=resource.url,
         sha256=resource.sha256,
     )
-    archive = install_file(archive_resource, root)
-    destination = root / resource.destination
-    executable = destination / "llama-server.exe"
-    if (
-        executable.is_file()
-        and resource.executable_sha256
-        and sha256_file(executable) == resource.executable_sha256
-    ):
-        return destination
-    extract_verified_zip(archive, destination)
+    archive = install_file(archive_resource, root, download=download)
+    candidate = destination.with_name(f".{destination.name}.candidate")
+    if candidate.exists():
+        shutil.rmtree(candidate)
+    extract_verified_zip(archive, candidate)
     if resource.executable_sha256:
-        candidates = list(destination.rglob("llama-server.exe"))
+        candidates = list(candidate.rglob("llama-server.exe"))
         if len(candidates) != 1 or sha256_file(candidates[0]) != resource.executable_sha256:
+            shutil.rmtree(candidate)
             raise ResourceInstallError(f"executable SHA256 mismatch for {resource.id}")
-        if candidates[0].parent != destination:
+        if candidates[0].parent != candidate:
             for item in candidates[0].parent.iterdir():
-                shutil.move(str(item), destination / item.name)
+                shutil.move(str(item), candidate / item.name)
+    if resource.tree_sha256 and sha256_tree(candidate) != resource.tree_sha256:
+        shutil.rmtree(candidate)
+        raise ResourceInstallError(f"tree SHA256 mismatch for {resource.id}")
+    backup = destination.with_name(f".{destination.name}.previous")
+    if backup.exists():
+        shutil.rmtree(backup)
+    if destination.exists():
+        destination.replace(backup)
+    try:
+        candidate.replace(destination)
+    except Exception:
+        if backup.exists():
+            backup.replace(destination)
+        raise
+    if backup.exists():
+        shutil.rmtree(backup)
     return destination
 
 
-def _install_modelscope_snapshot(resource: Resource, root: Path) -> Path:
-    from modelscope.hub.snapshot_download import snapshot_download
-
+def install_modelscope_snapshot(
+    resource: Resource,
+    root: Path,
+    *,
+    snapshot_download: Callable[..., str],
+) -> Path:
     if not resource.repo_id or not resource.revision:
         raise ResourceInstallError(f"{resource.id} is missing repo_id or revision")
+    installed = root / resource.destination / "snapshots" / resource.revision
+    if (
+        resource.tree_sha256
+        and installed.is_dir()
+        and sha256_tree(installed) == resource.tree_sha256
+    ):
+        return installed
     path = Path(
         snapshot_download(
             model_id=resource.repo_id,
@@ -320,10 +361,9 @@ def _resource_digest(resource: Resource, root: Path) -> str:
             raise ResourceInstallError(f"missing resource: {resource.id}")
         return sha256_file(target)
     if resource.kind == "http_archive":
-        executable = target / "llama-server.exe"
-        if not executable.is_file():
+        if not target.is_dir():
             raise ResourceInstallError(f"missing resource: {resource.id}")
-        return sha256_file(executable)
+        return sha256_tree(target)
     if resource.kind in {"huggingface_snapshot", "modelscope_snapshot"}:
         snapshots = target / "snapshots"
         expected = snapshots / str(resource.revision)
@@ -349,13 +389,17 @@ def install_resources(root: Path) -> dict[str, str]:
         elif resource.kind == "http_file":
             install_file(resource, root)
         elif resource.kind == "http_archive":
-            _install_archive(resource, root)
+            install_archive(resource, root)
         elif resource.kind == "huggingface_snapshot":
             from huggingface_hub import snapshot_download
 
             install_snapshot(resource, root, snapshot_download=snapshot_download)
         elif resource.kind == "modelscope_snapshot":
-            _install_modelscope_snapshot(resource, root)
+            from modelscope.hub.snapshot_download import snapshot_download
+
+            install_modelscope_snapshot(
+                resource, root, snapshot_download=snapshot_download
+            )
         completed[resource.id] = _resource_digest(resource, root)
         write_install_state(root, completed)
     return completed
@@ -369,7 +413,7 @@ def verify_resources(root: Path) -> dict[str, str]:
         digest = _resource_digest(resource, root)
         expected = resource.sha256
         if resource.kind == "http_archive":
-            expected = resource.executable_sha256
+            expected = resource.tree_sha256
         elif resource.kind in {"huggingface_snapshot", "modelscope_snapshot"}:
             expected = resource.tree_sha256
         if expected and digest != expected:

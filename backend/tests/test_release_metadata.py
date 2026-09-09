@@ -62,3 +62,12 @@ def test_release_excludes_runtime_data_and_all_other_models() -> None:
 def test_evaluation_and_post_training_are_absent_from_release() -> None:
     assert not (ROOT / "backend" / "app" / "evaluation").exists()
     assert not (ROOT / "backend" / "app" / "post_training").exists()
+
+
+def test_setup_checks_every_native_command_exit_code() -> None:
+    setup = (ROOT / "setup.ps1").read_text(encoding="utf-8")
+    assert "function Invoke-Native" in setup
+    assert "if ($LASTEXITCODE -ne 0)" in setup
+    assert "& $venvPython" not in setup
+    assert "& $figurePython" not in setup
+    assert "& $git.Source" not in setup

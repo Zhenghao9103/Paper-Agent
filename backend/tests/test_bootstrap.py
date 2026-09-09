@@ -14,9 +14,12 @@ from scripts.bootstrap import (
     extract_verified_zip,
     generate_env,
     generate_mineru_config,
+    install_archive,
     install_file,
+    install_modelscope_snapshot,
     install_snapshot,
     load_resource_lock,
+    sha256_tree,
 )
 
 
@@ -141,6 +144,74 @@ def test_snapshot_installer_uses_locked_revision(tmp_path: Path) -> None:
             "local_files_only": False,
         }
     ]
+
+
+def test_verified_snapshot_is_reused_without_network(tmp_path: Path) -> None:
+    revision = "a" * 40
+    snapshot = tmp_path / ".hf-cache" / "hub" / "models--BAAI--bge-m3" / "snapshots" / revision
+    snapshot.mkdir(parents=True)
+    (snapshot / "config.json").write_text("{}", encoding="utf-8")
+    resource = Resource(
+        id="bge-m3",
+        kind="huggingface_snapshot",
+        repo_id="BAAI/bge-m3",
+        revision=revision,
+        destination=Path(".hf-cache/hub/models--BAAI--bge-m3"),
+        tree_sha256=sha256_tree(snapshot),
+    )
+
+    def download(**_kwargs: object) -> str:
+        raise AssertionError("verified snapshot must not access network")
+
+    assert install_snapshot(resource, tmp_path, snapshot_download=download) == snapshot
+
+
+def test_verified_modelscope_snapshot_is_reused_without_network(tmp_path: Path) -> None:
+    revision = "b" * 40
+    snapshot = (
+        tmp_path
+        / ".mineru"
+        / "modelscope"
+        / "models"
+        / "Owner--Repo"
+        / "snapshots"
+        / revision
+    )
+    snapshot.mkdir(parents=True)
+    (snapshot / "config.json").write_text("{}", encoding="utf-8")
+    resource = Resource(
+        id="mineru",
+        kind="modelscope_snapshot",
+        repo_id="Owner/Repo",
+        revision=revision,
+        destination=Path(".mineru/modelscope/models/Owner--Repo"),
+        tree_sha256=sha256_tree(snapshot),
+    )
+
+    def download(**_kwargs: object) -> str:
+        raise AssertionError("verified snapshot must not access network")
+
+    assert install_modelscope_snapshot(resource, tmp_path, snapshot_download=download) == snapshot
+
+
+def test_verified_llama_tree_is_reused_without_download(tmp_path: Path) -> None:
+    destination = tmp_path / ".tools" / "llama.cpp"
+    destination.mkdir(parents=True)
+    (destination / "llama-server.exe").write_bytes(b"exe")
+    (destination / "llama-server-impl.dll").write_bytes(b"dll")
+    resource = Resource(
+        id="llama",
+        kind="http_archive",
+        destination=Path(".tools/llama.cpp"),
+        url="https://example.invalid/llama.zip",
+        sha256="a" * 64,
+        tree_sha256=sha256_tree(destination),
+    )
+
+    def download(_url: str, _target: Path) -> None:
+        raise AssertionError("verified archive tree must not be downloaded")
+
+    assert install_archive(resource, tmp_path, download=download) == destination
 
 
 def _read_env(path: Path) -> dict[str, str]:
