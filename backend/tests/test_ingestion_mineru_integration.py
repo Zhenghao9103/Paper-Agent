@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+from backend.app.ingestion.domain import ParseStatus
 from backend.app.ingestion.figure_descriptions import FigureDescriptionError
+from backend.app.models import Document, DocumentChunk, DocumentChunkDetail, DocumentElement
+from backend.app.services import ingestion
 from backend.app.services.ingestion import configured_pdf_pipeline
+from sqlalchemy import select
 
 
 def _settings(root: Path, *, figures: bool = False) -> SimpleNamespace:
@@ -81,3 +87,110 @@ def test_formula_config_outside_mineru_root_is_rejected(tmp_path: Path) -> None:
 
     with configured_pdf_pipeline(settings) as pipeline:
         assert pipeline.equation_parser.recognizer is None
+
+
+def test_parse_enriches_saved_figures_before_final_indexes(
+    db_session,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document = Document(
+        title="Batch figure enrichment",
+        file_type="pdf",
+        file_path=str(tmp_path / "paper.pdf"),
+        status="uploaded",
+    )
+    db_session.add(document)
+    db_session.commit()
+    events: list[str] = []
+    manifests: list[dict[str, int]] = []
+
+    @contextmanager
+    def fake_pipeline(**_kwargs):
+        yield object()
+
+    parsed = SimpleNamespace(
+        report=SimpleNamespace(status=ParseStatus.SUCCESS),
+        metadata={"parser": "mineru-primary"},
+    )
+    result = SimpleNamespace(document=parsed, staging_dir=tmp_path, timings_ms={})
+
+    def fake_save(_self, db, saved_document, _parsed, _staging) -> None:
+        events.append("save")
+        body = DocumentChunk(
+            document_id=saved_document.id,
+            page_number=1,
+            chunk_index=0,
+            content="Preserved body text.",
+        )
+        figure = DocumentElement(
+            document_id=saved_document.id,
+            element_uid="figure-1",
+            element_type="figure",
+            page_number=1,
+            parse_status="pending",
+        )
+        figure_chunk = DocumentChunk(
+            document_id=saved_document.id,
+            page_number=1,
+            chunk_index=1,
+            content="Original figure text.",
+        )
+        db.add_all([body, figure, figure_chunk])
+        db.flush()
+        db.add(
+            DocumentChunkDetail(
+                chunk_id=figure_chunk.id,
+                chunk_uid="figure-1-chunk",
+                chunk_type="figure",
+                element_id=figure.id,
+            )
+        )
+        db.commit()
+
+    def fake_enrich(db, saved_document) -> int:
+        events.append("enrich")
+        figure_chunk = db.scalar(
+            select(DocumentChunk)
+            .join(DocumentChunkDetail)
+            .where(DocumentChunk.document_id == saved_document.id)
+        )
+        figure_chunk.content = "Enriched figure summary."
+        db.commit()
+        return 1
+
+    def fake_index_chunk(_db, *, content: str, **_kwargs) -> None:
+        events.append(f"bm25:{content}")
+
+    def fake_upsert_chunks(payload) -> None:
+        events.append("vector")
+        assert [item["content"] for item in payload] == [
+            "Preserved body text.",
+            "Enriched figure summary.",
+        ]
+
+    monkeypatch.setattr(ingestion, "configured_pdf_pipeline", fake_pipeline)
+    monkeypatch.setattr(ingestion, "run_primary_with_fallback", lambda *_args, **_kwargs: result)
+    monkeypatch.setattr(ingestion, "MinerUPrimaryParser", lambda: object())
+    monkeypatch.setattr(ingestion.DocumentStore, "save", fake_save)
+    monkeypatch.setattr(ingestion, "enrich_document_figures", fake_enrich, raising=False)
+    monkeypatch.setattr(ingestion, "delete_document_index", lambda *_args: events.append("delete"))
+    monkeypatch.setattr(ingestion, "index_chunk", fake_index_chunk)
+    monkeypatch.setattr(ingestion, "upsert_chunks", fake_upsert_chunks)
+    monkeypatch.setattr(
+        ingestion,
+        "_write_pipeline_manifest",
+        lambda _document_id, _stage, _timings, counts: manifests.append(dict(counts)),
+    )
+    monkeypatch.setattr(ingestion, "staging_dir", lambda: tmp_path / ".tmp")
+
+    assert ingestion.parse_and_store_document(db_session, document) is True
+    assert events == [
+        "save",
+        "enrich",
+        "delete",
+        "bm25:Preserved body text.",
+        "bm25:Enriched figure summary.",
+        "vector",
+    ]
+    assert manifests[-1]["figure_enriched"] == 1

@@ -1,5 +1,7 @@
 import json
 from datetime import datetime
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from backend.app.db.base import Base
@@ -9,6 +11,10 @@ from backend.app.ingestion.domain import (
     ParseWarning,
     SectionNode,
     StructuredChunk,
+)
+from backend.app.ingestion.figure_descriptions import (
+    FigureDescription,
+    FigureDescriptionResult,
 )
 from backend.app.models import (
     Document,
@@ -29,8 +35,9 @@ from backend.app.schemas.parsing import (
     SectionNodeRead,
     StructuredChunkRead,
 )
+from backend.app.services import figure_enrichment
 from backend.app.services.document_store import DocumentStore
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -315,6 +322,138 @@ def test_uids_are_unique_per_document_and_cross_reference_target_is_nullable(par
     parsing_db.add(reference)
     parsing_db.commit()
     assert reference.target_element_id is None
+
+
+def test_enrich_document_figures_reuses_service_and_isolates_each_failure(
+    parsing_db,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document = _document()
+    parsing_db.add(document)
+    parsing_db.flush()
+    body = DocumentChunk(
+        document_id=document.id,
+        page_number=1,
+        chunk_index=0,
+        content="Body text must survive figure enrichment.",
+    )
+    parsing_db.add(body)
+    parsing_db.flush()
+
+    figure_chunks: dict[str, DocumentChunk] = {}
+    for index, name in enumerate(("first", "broken", "last"), start=1):
+        image = tmp_path / f"{name}.png"
+        image.write_bytes(b"image")
+        element = DocumentElement(
+            document_id=document.id,
+            element_uid=f"figure-{name}",
+            element_type="figure",
+            page_number=index,
+            image_path=str(image),
+            structured_data_json=json.dumps({"source": name}),
+            parse_status="pending",
+        )
+        chunk = DocumentChunk(
+            document_id=document.id,
+            page_number=index,
+            chunk_index=index,
+            content=f"Original {name} figure text.",
+        )
+        parsing_db.add_all([element, chunk])
+        parsing_db.flush()
+        parsing_db.add(
+            DocumentChunkDetail(
+                chunk_id=chunk.id,
+                chunk_uid=f"figure-{name}-chunk",
+                chunk_type="figure",
+                element_id=element.id,
+            )
+        )
+        figure_chunks[name] = chunk
+    parsing_db.commit()
+
+    calls: list[str] = []
+
+    class FakeManager:
+        def __init__(self, **_kwargs) -> None:
+            calls.append("manager")
+
+        def ensure_started(self) -> None:
+            calls.append("start")
+
+        def schedule_idle_close(self, _seconds: float) -> None:
+            calls.append("idle")
+
+    class FakeClient:
+        def __init__(self, *_args, **_kwargs) -> None:
+            calls.append("client")
+
+        def describe(self, image_path: Path, **_kwargs) -> FigureDescriptionResult:
+            calls.append(f"describe:{image_path.stem}")
+            if image_path.stem == "broken":
+                raise RuntimeError("broken figure")
+            return FigureDescriptionResult(
+                description=FigureDescription(summary=f"Summary for {image_path.stem}."),
+                model="fake-model",
+                latency_ms=1,
+            )
+
+    settings = SimpleNamespace(
+        mineru_figure_enabled=True,
+        mineru_root=str(tmp_path),
+        mineru_figure_manifest=str(tmp_path / "manifest.json"),
+        mineru_figure_service_url="http://127.0.0.1:8002",
+        mineru_figure_python=str(tmp_path / "python.exe"),
+        mineru_figure_startup_timeout_seconds=2.0,
+        mineru_figure_request_timeout_seconds=3.0,
+        mineru_figure_idle_timeout_seconds=4.0,
+    )
+    monkeypatch.setattr(figure_enrichment, "get_settings", lambda: settings)
+    monkeypatch.setattr(figure_enrichment, "MinerUFigureServiceManager", FakeManager)
+    monkeypatch.setattr(figure_enrichment, "MinerUFigureClient", FakeClient)
+    monkeypatch.setattr(
+        figure_enrichment,
+        "index_chunk",
+        lambda **_kwargs: pytest.fail("batch enrichment must defer BM25 indexing"),
+    )
+    monkeypatch.setattr(
+        figure_enrichment,
+        "upsert_chunk",
+        lambda **_kwargs: pytest.fail("batch enrichment must defer vector indexing"),
+    )
+
+    enrich_document_figures = getattr(
+        figure_enrichment, "enrich_document_figures", None
+    )
+    assert enrich_document_figures is not None
+    enriched = enrich_document_figures(parsing_db, document)
+
+    assert enriched == 2
+    assert calls == [
+        "manager",
+        "client",
+        "start",
+        "describe:first",
+        "describe:broken",
+        "describe:last",
+        "idle",
+    ]
+    assert parsing_db.get(DocumentChunk, body.id).content == body.content
+    assert "Summary for first." in parsing_db.get(
+        DocumentChunk, figure_chunks["first"].id
+    ).content
+    assert "Summary for last." in parsing_db.get(
+        DocumentChunk, figure_chunks["last"].id
+    ).content
+    assert parsing_db.get(
+        DocumentChunk, figure_chunks["broken"].id
+    ).content == "Original broken figure text."
+    broken = parsing_db.scalar(
+        select(DocumentElement).where(DocumentElement.element_uid == "figure-broken")
+    )
+    assert broken.parse_status == "warning"
+    assert json.loads(broken.structured_data_json)["enrichment_error"] == "broken figure"
 
 
 def test_read_schemas_decode_json_and_preserve_nullable_fields(parsing_db):

@@ -30,6 +30,7 @@ from ..models.parsing import DocumentChunkDetail, DocumentElement
 from ..rag.bm25_store import delete_document_index, index_chunk
 from ..rag.vector_store import delete_document_chunks, upsert_chunks
 from .document_store import DocumentStore
+from .figure_enrichment import enrich_document_figures
 from .mineru_figure_runtime import MinerUFigureServiceManager
 
 logger = logging.getLogger(__name__)
@@ -173,6 +174,11 @@ def parse_and_store_document(db: Session, document: Document) -> bool:
         persist_started = perf_counter()
         DocumentStore().save(db, document, result.document, result.staging_dir)
         timings["persist"] = round((perf_counter() - persist_started) * 1000)
+        figure_started = perf_counter()
+        counts["figure_enriched"] = enrich_document_figures(db, document)
+        timings["figure_enrichment"] = round(
+            (perf_counter() - figure_started) * 1000
+        )
     except Exception:
         logger.warning("Document %s parsing failed", document.id, exc_info=True)
         db.rollback()
