@@ -1,0 +1,83 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from types import SimpleNamespace
+
+from backend.app.ingestion.figure_descriptions import FigureDescriptionError
+from backend.app.services.ingestion import configured_pdf_pipeline
+
+
+def _settings(root: Path, *, figures: bool = False) -> SimpleNamespace:
+    pipeline = root / "modelscope" / "pipeline"
+    (pipeline / "models" / "MFR" / "unimernet_hf_small_2503").mkdir(parents=True)
+    (root / "mineru.json").write_text(
+        json.dumps({"models-dir": {"pipeline": str(pipeline)}}), encoding="utf-8"
+    )
+    return SimpleNamespace(
+        mineru_root=str(root),
+        mineru_formula_enabled=True,
+        mineru_figure_enabled=figures,
+        mineru_figure_service_url="http://127.0.0.1:8002",
+        mineru_figure_request_timeout_seconds=4.0,
+        mineru_figure_startup_timeout_seconds=5.0,
+        mineru_figure_python=str(root / "figure-env" / "Scripts" / "python.exe"),
+        mineru_figure_manifest=str(root / "figure-model.json"),
+    )
+
+
+def test_configured_pipeline_uses_local_formula_model_and_disables_legacy_vision(
+    tmp_path: Path,
+) -> None:
+    with configured_pdf_pipeline(_settings(tmp_path)) as pipeline:
+        assert pipeline.equation_parser.recognizer.model_path.is_relative_to(tmp_path)
+        assert pipeline.figure_parser.describe(object()) is None
+
+
+def test_configured_pipeline_starts_and_closes_owned_figure_service(tmp_path: Path) -> None:
+    calls: list[str] = []
+
+    class Manager:
+        def ensure_started(self) -> None:
+            calls.append("start")
+
+        def close(self) -> None:
+            calls.append("close")
+
+    class Client:
+        def describe(self, *_args, **_kwargs):
+            calls.append("describe")
+            raise FigureDescriptionError("figure_description_timeout")
+
+    with configured_pdf_pipeline(
+        _settings(tmp_path, figures=True),
+        manager_factory=lambda **_kwargs: Manager(),
+        client_factory=lambda *_args, **_kwargs: Client(),
+    ) as pipeline:
+        try:
+            pipeline.figure_parser.describe(
+                SimpleNamespace(
+                    image_path=tmp_path / "figure.png",
+                    title="Paper",
+                    section=None,
+                    caption=None,
+                )
+            )
+        except FigureDescriptionError as exc:
+            assert exc.code == "figure_description_timeout"
+
+    assert calls == ["start", "describe", "close"]
+
+
+def test_formula_config_outside_mineru_root_is_rejected(tmp_path: Path) -> None:
+    settings = _settings(tmp_path)
+    outside = tmp_path.parent / "outside-pipeline"
+    (outside / "models" / "MFR" / "unimernet_hf_small_2503").mkdir(
+        parents=True, exist_ok=True
+    )
+    (tmp_path / "mineru.json").write_text(
+        json.dumps({"models-dir": {"pipeline": str(outside)}}), encoding="utf-8"
+    )
+
+    with configured_pdf_pipeline(settings) as pipeline:
+        assert pipeline.equation_parser.recognizer is None

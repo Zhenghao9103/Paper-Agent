@@ -1,9 +1,9 @@
-from pydantic import BaseModel, ConfigDict
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Citation(BaseModel):
     document_id: int
+    chunk_id: int | None = None
     title: str
     page_number: int
     chunk_index: int

@@ -10,7 +10,6 @@ from ..models.document import Document
 from ..models.page import DocumentPage
 from .llm import complete
 
-
 ANALYSIS_KEYS = {
     "summary_zh",
     "innovations",
@@ -253,7 +252,9 @@ def _build_innovations(terms: list[str], method_sentences: list[str]) -> str:
     if not points and method_sentences:
         points.append("围绕作者提出的方法流程进行改进，创新点集中在任务建模、算法模块或训练/推理流程。")
     if not points:
-        points.append("解析文本中未明确出现创新点标题，建议补充 Introduction 或 Contribution 页面后重新分析。")
+        points.append(
+            "解析文本中未明确出现创新点标题，建议补充 Introduction 或 Contribution 页面后重新分析。"
+        )
     return "\n".join(f"- {point}" for point in points)
 
 
@@ -287,7 +288,10 @@ def _build_experiments(experiment_sentences: list[str]) -> str:
             metrics.append(metric)
 
     if not experiment_sentences:
-        return "实验结论：解析文本中未明确给出实验设置。建议补充 Results、Experiments、Evaluation 或表格页面后重新分析。"
+        return (
+            "实验结论：解析文本中未明确给出实验设置。"
+            "建议补充 Results、Experiments、Evaluation 或表格页面后重新分析。"
+        )
 
     pieces = ["实验结论：文本中检测到实验/评估相关内容。"]
     if metrics:

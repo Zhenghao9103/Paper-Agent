@@ -9,7 +9,8 @@ class MemoryRead(BaseModel):
     content: str
     source_type: str
     source_id: int | None
-    confidence: float
+    importance_score: float
+    status: str
     is_pinned: bool
     created_at: datetime
     updated_at: datetime

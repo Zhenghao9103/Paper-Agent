@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from .parsing import DocumentChunkDetailRead
+
 
 class DocumentChunkRead(BaseModel):
     id: int
@@ -11,5 +13,6 @@ class DocumentChunkRead(BaseModel):
     chunk_index: int
     content: str
     created_at: datetime
+    detail: DocumentChunkDetailRead | None = None
 
     model_config = ConfigDict(from_attributes=True)

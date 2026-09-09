@@ -1,8 +1,8 @@
-import arxiv
 import re
 
-from ..schemas.arxiv import ArxivPaper
+import arxiv
 
+from ..schemas.arxiv import ArxivPaper
 
 ADVANCED_QUERY_RE = re.compile(r"\b(?:all|ti|au|abs|co|jr|cat|id):|\b(?:AND|OR|ANDNOT)\b")
 

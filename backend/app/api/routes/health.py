@@ -18,7 +18,7 @@ def health() -> HealthResponse:
 
 
 @router.get("/health/llm")
-def llm_health(ping: bool = False) -> dict[str, str | bool]:
+def llm_health(ping: bool = False, target: str | None = None) -> dict[str, object]:
     if ping:
-        return ping_llm()
+        return ping_llm(target=target)
     return llm_config_status()

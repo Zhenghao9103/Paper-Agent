@@ -14,6 +14,12 @@ input {
   font: inherit;
 }
 
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #7db7ed;
+  outline-offset: 2px;
+}
+
 .app-shell {
   display: grid;
   min-height: 100vh;
@@ -95,6 +101,30 @@ header p {
   background: #8fb7df;
 }
 
+.upload-progress {
+  margin-top: 14px;
+  color: #38546c;
+  font-size: 13px;
+}
+
+.upload-progress-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.upload-progress progress {
+  display: block;
+  width: 100%;
+  height: 9px;
+  accent-color: #0f6fcd;
+}
+
+.upload-progress-complete {
+  color: #116329;
+}
+
 .document-list {
   display: grid;
   gap: 12px;
@@ -109,6 +139,10 @@ header p {
   padding: 16px;
 }
 
+.document-entry {
+  min-width: 0;
+}
+
 .document-card h3 {
   margin: 0 0 6px;
 }
@@ -116,6 +150,175 @@ header p {
 .document-card p {
   margin: 0;
   color: #667789;
+}
+
+.document-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reparse-button,
+.inspect-button {
+  border: 0;
+  border-radius: 6px;
+  background: #0f6fcd;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 7px 11px;
+}
+
+.inspect-button {
+  border: 1px solid #9cb7d1;
+  background: #f5f9fd;
+  color: #174f7d;
+}
+
+.reparse-button:disabled {
+  background: #8fb7df;
+  cursor: wait;
+}
+
+.evidence-drawer {
+  border: 1px solid #cad8e6;
+  border-top: 3px solid #1d679d;
+  border-radius: 0 0 8px 8px;
+  background: #f8fbfe;
+  padding: 12px;
+}
+
+.evidence-summary {
+  display: flex;
+  gap: 16px;
+  color: #536b80;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.evidence-strip {
+  display: grid;
+  grid-template-columns: 156px minmax(0, 1fr);
+  border-top: 1px solid #d9e5ef;
+  background: #fff;
+  min-height: 138px;
+}
+
+.evidence-strip:first-of-type {
+  border-top: 0;
+}
+
+.evidence-visual {
+  display: grid;
+  place-items: center;
+  border-right: 1px solid #d9e5ef;
+  background: #edf3f8;
+  color: #71869a;
+  min-height: 138px;
+  overflow: hidden;
+}
+
+.evidence-visual img {
+  display: block;
+  width: 100%;
+  height: 138px;
+  object-fit: contain;
+}
+
+.evidence-body {
+  min-width: 0;
+  padding: 13px 16px 16px;
+}
+
+.evidence-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.evidence-heading h4 {
+  margin: 3px 0 10px;
+  font-size: 15px;
+}
+
+.evidence-kind {
+  color: #27628f;
+  font: 700 10px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.parse-mark {
+  border: 1px solid #b7cadb;
+  border-radius: 3px;
+  color: #49677f;
+  font-size: 10px;
+  padding: 3px 6px;
+}
+
+.parse-partial {
+  border-color: #dbc78c;
+  background: #fff9e8;
+  color: #795b08;
+}
+
+.evidence-body p {
+  margin: 4px 0 10px;
+}
+
+.evidence-body dl {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.evidence-body dt {
+  color: #687d90;
+  font-size: 12px;
+}
+
+.evidence-body dd {
+  margin: 0;
+}
+
+.formula-source {
+  overflow-x: auto;
+  border-left: 3px solid #3279ac;
+  background: #f1f6fa;
+  color: #18384e;
+  font: 13px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+  margin: 0;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.evidence-body table {
+  border-collapse: collapse;
+  width: 100%;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.evidence-body th,
+.evidence-body td {
+  border: 1px solid #d5e0e9;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.evidence-body th {
+  background: #edf4f9;
+}
+
+.evidence-warning {
+  color: #8a5c0a;
+  font-size: 12px;
 }
 
 .status {
@@ -171,5 +374,20 @@ header p {
 
   .upload-form {
     flex-direction: column;
+  }
+
+  .document-card,
+  .document-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .evidence-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .evidence-visual {
+    border-bottom: 1px solid #d9e5ef;
+    border-right: 0;
   }
 }
