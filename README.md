@@ -1,6 +1,35 @@
 # Paper-Agent v2
 
-Paper-Agent 是一个面向学术 PDF 的本地优先 RAG / Agent 应用。上传 PDF 后，系统会自动完成 MinerU 解析、SQLite 持久化、BM25 建索引、BGE-M3 向量化和 Chroma 入库；问答阶段由随仓库发布的本地 Router 模型选择 `direct`、`simple_rag` 或 `agentic_rag`。
+> **本地小模型路由驱动的 Evidence-driven Agentic RAG**
+
+Paper-Agent 是一个面向学术 PDF 的本地优先研究助手。它把 PDF 结构化解析、混合检索、证据管理和答案校验组织成一条可控的研究链路，并使用随仓库发布的本地小模型判断每个问题应该直接处理、执行一次 RAG，还是进入多轮 Agentic RAG。
+
+| 核心亮点 | 作用 |
+| --- | --- |
+| **本地意图 Router** | Qwen3-1.7B SFT Router 以 Q4 GGUF 随仓库发布，由 llama.cpp 在本机运行 |
+| **三路按需执行** | 在 `direct`、`simple_rag`、`agentic_rag` 之间选择，避免所有问题都启动复杂 Agent |
+| **Evidence-driven Agent Loop** | 围绕 claim 拆解、证据准入、覆盖状态和答案校验执行有边界的多轮研究 |
+| **本地知识库** | MinerU、SQLite、BM25、BGE-M3、ChromaDB 与 BGE-Reranker 组成完整 PDF 入库和检索链路 |
+
+![Paper-Agent 学术论文智能体整体框架](frontend/public/readme/paper-agent-architecture.png)
+
+## 本地小模型意图路由
+
+Router 不是缩小版的回答模型，而是生产链路前端的专用分类器。它只根据当前问题和有限会话上下文输出一个意图，不负责生成答案或规划检索：
+
+- `direct`：文档状态等无需检索的问题直接在本地处理。
+- `simple_rag`：执行一次查询规划、混合检索、重排和基于证据的回答。
+- `agentic_rag`：复杂比较、多对象分析和多跳问题进入 Agent 研究循环。
+
+发布模型为 `Qwen3-1.7B-Router-SFT-V3-Q4_K_M.gguf`，约 1.1 GB，通过 Git LFS 管理。启动器会使用 llama.cpp 在 `127.0.0.1:8089` 托管它，因此路由本身无需外部 Router API Key；如果 Router 超时、协议错误或输出无效，系统会保守地降级到 `agentic_rag`，避免因错误分流丢失必要证据。
+
+## Evidence-driven Agentic RAG
+
+传统 RAG 通常在一次检索后直接生成答案。Paper-Agent 的 `agentic_rag` 会先明确需要回答的 claims，再围绕尚未覆盖的证据缺口迭代检索；只有整理出受控的 Evidence Pack 后才允许生成最终答案。
+
+![Evidence-driven Agentic RAG 工作流](frontend/public/readme/agentic-rag-workflow.png)
+
+这条链路并不是把全部控制权交给 LLM：模型负责 claim 拆解、语义判断和答案生成，代码负责工具白名单、Schema 校验、Evidence Pool 状态更新、token 预算、引用合法性、超时与失败降级。默认最多执行 3 轮研究和 5 次工具调用，并受 180 秒总时限约束。
 
 本发布版只包含运行代码和最终 Router 模型，不包含 `docs/`、`data/`、`reports/`、评估脚本、训练材料或预生成的 Chroma 数据库。
 
@@ -68,9 +97,11 @@ $env:PAPER_AGENT_OPEN_BROWSER="0"
 - MinerU PDF 结构化解析、公式识别与图表理解
 - SQLite 文档存储与 BM25 全文检索
 - BGE-M3 向量召回、ChromaDB 本地索引和 BGE-Reranker 精排
-- 本地 GGUF Router 与 llama.cpp 托管
-- `direct`、`simple_rag`、`agentic_rag` 三类问答路径
-- 引用、会话记忆、上下文压缩和安全轨迹记录
+- 本地 Qwen3-1.7B Q4 GGUF Router 与 llama.cpp 托管
+- `direct`、`simple_rag`、`agentic_rag` 三类按需问答路径
+- Research Planner、Evidence Judge、Evidence Pool、Evidence Pack 与 Answer Verifier
+- 工具预算、超时、Schema 校验、引用验证和安全轨迹记录
+- 会话记忆与上下文压缩
 - 内置 Web 界面及 React/Vite 前端源码
 
 ## 目录说明
