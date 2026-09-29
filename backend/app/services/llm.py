@@ -68,11 +68,19 @@ def llm_config_status() -> dict[str, object]:
     """
 
     settings = get_settings()
-    router = _tier_status(
-        settings.resolved_router_api_key,
-        settings.resolved_router_base_url,
-        settings.resolved_router_model,
-    )
+    if settings.router_provider == "jev":
+        router = _tier_status(
+            settings.jev_api_key,
+            settings.jev_base_url or "https://api.typesafe.ai",
+            settings.jev_model or "jev-1.13.0",
+        )
+    else:
+        router = _tier_status(
+            settings.resolved_router_api_key,
+            settings.resolved_router_base_url,
+            settings.resolved_router_model,
+        )
+    router["provider"] = settings.router_provider
     agent = _tier_status(
         settings.resolved_agent_api_key,
         settings.resolved_agent_base_url,
@@ -113,6 +121,14 @@ def ping_llm(target: str | None = None) -> dict[str, object]:
             }
             continue
         try:
+            if name in {"router", "small"} and get_settings().router_provider == "jev":
+                from .jev_router import jev_choice
+                from .router_contract import RouterDecision
+
+                choice = jev_choice({"session_context": [], "current_question": "hello"})
+                decision = RouterDecision.model_validate({"intent": choice})
+                results[name] = {**model_status, "ok": True, "reply": decision.intent}
+                continue
             from .model_clients import _agent_client, _router_client
 
             client = _router_client() if name in {"router", "small"} else _agent_client()
@@ -128,10 +144,16 @@ def ping_llm(target: str | None = None) -> dict[str, object]:
             content = getattr(getattr(response.choices[0], "message", None), "content", "") or ""
             results[name] = {**model_status, "ok": True, "reply": content.strip()}
         except Exception as exc:
+            if name in {"router", "small"} and get_settings().router_provider == "jev":
+                from .router_contract import safe_router_error_category
+
+                error = safe_router_error_category(exc)
+            else:
+                error = f"{type(exc).__name__}: {_safe_error(exc)}"
             results[name] = {
                 **model_status,
                 "ok": False,
-                "error": f"{type(exc).__name__}: {_safe_error(exc)}",
+                "error": error,
             }
     ok_values = [bool(value.get("ok")) for value in results.values() if isinstance(value, dict)]
     return {**status, **results, "ok": bool(ok_values) and all(ok_values)}

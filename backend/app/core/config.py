@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,6 +14,11 @@ LOCAL_ENV_OVERRIDES = {
     "OPENAI_CHAT_MODEL": "openai_chat_model",
     "OPENAI_VISION_MODEL": "openai_vision_model",
     "ROUTER_API_KEY": "router_api_key",
+    "ROUTER_PROVIDER": "router_provider",
+    "JEV_API_KEY": "jev_api_key",
+    "JEV_BASE_URL": "jev_base_url",
+    "JEV_MODEL": "jev_model",
+    "JEV_TIMEOUT_SECONDS": "jev_timeout_seconds",
     "ROUTER_BASE_URL": "router_base_url",
     "ROUTER_MODEL": "router_model",
     "ROUTER_TIMEOUT_SECONDS": "router_timeout_seconds",
@@ -70,6 +76,11 @@ class Settings(BaseSettings):
     openai_chat_model: str = "gpt-4.1-mini"
     openai_vision_model: str | None = None
     router_api_key: str | None = None
+    router_provider: Literal["local", "jev"] = "local"
+    jev_api_key: str | None = None
+    jev_base_url: str | None = None
+    jev_model: str | None = None
+    jev_timeout_seconds: float = Field(default=10.0, gt=0)
     router_base_url: str | None = None
     router_model: str | None = None
     router_timeout_seconds: float = Field(default=15.0, gt=0)
@@ -168,7 +179,9 @@ class Settings(BaseSettings):
                 "agent_total_timeout_seconds must be greater than or equal to "
                 "agent_timeout_seconds"
             )
-        if self.router_managed and not (self.router_server_path and self.router_gguf_path):
+        if self.router_provider == "local" and self.router_managed and not (
+            self.router_server_path and self.router_gguf_path
+        ):
             raise ValueError(
                 "router_managed requires router_server_path and router_gguf_path"
             )

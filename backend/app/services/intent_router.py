@@ -7,10 +7,13 @@ conservatively to ``agentic_rag`` so a broken Router cannot lose evidence.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from ..core.config import get_settings
 from . import model_clients
+from .jev_router import jev_choice
 from .router_contract import (
     FALLBACK_INTENT,
     ROUTER_SYSTEM_PROMPT,
@@ -69,7 +72,12 @@ def route_question(
 
     del document_id
     try:
-        payload = router_json(build_router_messages(question, short_term_memory))
+        messages = build_router_messages(question, short_term_memory)
+        if get_settings().router_provider == "jev":
+            state = json.loads(messages[1]["content"])
+            payload = {"intent": jev_choice(state)}
+        else:
+            payload = router_json(messages)
         decision = RouterDecision.model_validate(payload)
         return RoutingOutcome(intent=decision.intent)
     except Exception as exc:

@@ -33,8 +33,11 @@ def run_checks(*, checks: Mapping[str, Callable[[], bool]]) -> CheckResults:
     return CheckResults(not failed, tuple(failed), details)
 
 
-def _imports_ok() -> bool:
-    for name in ("chromadb", "fastapi", "mineru", "sentence_transformers", "FlagEmbedding"):
+def _imports_ok(router_provider: str = "local") -> bool:
+    names = ["chromadb", "fastapi", "mineru", "sentence_transformers", "FlagEmbedding"]
+    if router_provider == "jev":
+        names.append("typesafe_sdk")
+    for name in names:
         importlib.import_module(name)
     return True
 
@@ -46,12 +49,15 @@ def _configuration_ok(root: Path) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Paper-Agent post-install checks")
     parser.add_argument("--root", type=Path, default=Path.cwd())
+    parser.add_argument("--router-provider", choices=("local", "jev"), default="local")
     args = parser.parse_args()
     root = args.root.resolve()
     results = run_checks(
         checks={
-            "imports": _imports_ok,
-            "resources": lambda: bool(verify_resources(root)),
+            "imports": lambda: _imports_ok(args.router_provider),
+            "resources": lambda: bool(
+                verify_resources(root, router_provider=args.router_provider)
+            ),
             "configuration": lambda: _configuration_ok(root),
         }
     )
