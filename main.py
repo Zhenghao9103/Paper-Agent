@@ -32,7 +32,7 @@ def start_managed_router():
     from backend.app.services.router_server import ManagedRouterServer, RouterServerError
 
     settings = get_settings()
-    if not settings.router_managed:
+    if settings.router_provider != "local" or not settings.router_managed:
         return None
     try:
         managed = ManagedRouterServer.from_settings(

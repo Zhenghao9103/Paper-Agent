@@ -13,6 +13,7 @@ alembic>=1.13.0
 
 # Agent, LLM, and RAG
 openai>=1.40.0
+typesafe-sdk>=0.7.2,<1
 chromadb==0.5.23
 numpy==1.26.4
 onnxruntime==1.20.1

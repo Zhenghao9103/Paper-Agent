@@ -34,6 +34,7 @@ ALLOWED_KINDS = {
     "modelscope_snapshot",
 }
 INSTALLER_ENV = {
+    "ROUTER_PROVIDER": "local",
     "ROUTER_MANAGED": "true",
     "ROUTER_SERVER_PATH": ".tools/llama.cpp/llama-server.exe",
     "ROUTER_GGUF_PATH": (
@@ -52,6 +53,7 @@ INSTALLER_ENV = {
     "HUGGINGFACE_HUB_CACHE": ".hf-cache/hub",
     "TIKTOKEN_CACHE_DIR": ".cache/tiktoken",
 }
+ROUTER_RESOURCES = frozenset({"router-q4-gguf", "llama-cpp-windows-cpu"})
 MINERU_PIPELINE_REVISION = "05eaf85cc4ddab92c2be61e10abec4586d25c1a6"
 MINERU_FIGURE_REVISION = "7a1ddf1dd3baa3c60507e33514c30e2cbfc1c3e2"
 
@@ -377,11 +379,15 @@ def _resource_digest(resource: Resource, root: Path) -> str:
     raise ResourceInstallError(f"unsupported resource kind: {resource.kind}")
 
 
-def install_resources(root: Path) -> dict[str, str]:
+def install_resources(root: Path, *, router_provider: str = "local") -> dict[str, str]:
+    if router_provider not in {"local", "jev"}:
+        raise ValueError("router_provider must be local or jev")
     root = root.resolve()
     lock = load_resource_lock(root / "resources.lock.json")
     completed: dict[str, str] = {}
     for resource in lock.resources:
+        if router_provider == "jev" and resource.id in ROUTER_RESOURCES:
+            continue
         if resource.kind == "git_lfs_file":
             digest = _resource_digest(resource, root)
             if digest != resource.sha256:
@@ -405,11 +411,15 @@ def install_resources(root: Path) -> dict[str, str]:
     return completed
 
 
-def verify_resources(root: Path) -> dict[str, str]:
+def verify_resources(root: Path, *, router_provider: str = "local") -> dict[str, str]:
+    if router_provider not in {"local", "jev"}:
+        raise ValueError("router_provider must be local or jev")
     root = root.resolve()
     lock = load_resource_lock(root / "resources.lock.json")
     verified: dict[str, str] = {}
     for resource in lock.resources:
+        if router_provider == "jev" and resource.id in ROUTER_RESOURCES:
+            continue
         digest = _resource_digest(resource, root)
         expected = resource.sha256
         if resource.kind == "http_archive":
@@ -446,7 +456,14 @@ def _atomic_write_text(target: Path, text: str) -> Path:
     return target
 
 
-def generate_env(root: Path) -> Path:
+def generate_env(root: Path, *, router_provider: str = "local") -> Path:
+    if router_provider not in {"local", "jev"}:
+        raise ValueError("router_provider must be local or jev")
+    installer_env = {
+        **INSTALLER_ENV,
+        "ROUTER_PROVIDER": router_provider,
+        "ROUTER_MANAGED": "true" if router_provider == "local" else "false",
+    }
     target = root / ".env"
     existing = target.read_text(encoding="utf-8").splitlines() if target.exists() else []
     output: list[str] = []
@@ -455,17 +472,30 @@ def generate_env(root: Path) -> Path:
         stripped = line.strip()
         if stripped and not stripped.startswith("#") and "=" in line:
             key = line.split("=", 1)[0].strip()
-            if key in INSTALLER_ENV:
-                output.append(f"{key}={INSTALLER_ENV[key]}")
+            if key in installer_env:
+                output.append(f"{key}={installer_env[key]}")
                 written.add(key)
                 continue
         output.append(line)
-    missing = [key for key in INSTALLER_ENV if key not in written]
+    missing = [key for key in installer_env if key not in written]
     if missing:
         if output and output[-1]:
             output.append("")
         output.append("# Managed by setup.ps1; provider credentials above are preserved.")
-        output.extend(f"{key}={INSTALLER_ENV[key]}" for key in missing)
+        output.extend(f"{key}={installer_env[key]}" for key in missing)
+    if router_provider == "jev":
+        present = {
+            line.split("=", 1)[0].strip()
+            for line in output
+            if "=" in line and not line.lstrip().startswith("#")
+        }
+        for key, value in (
+            ("JEV_API_KEY", ""),
+            ("JEV_BASE_URL", ""),
+            ("JEV_MODEL", "jev-1.13.0"),
+        ):
+            if key not in present:
+                output.append(f"{key}={value}")
     return _atomic_write_text(target, "\n".join(output).rstrip() + "\n")
 
 
@@ -510,12 +540,15 @@ def _main() -> int:
     verify.add_argument("--root", type=Path, default=Path.cwd())
     install = subparsers.add_parser("install-resources", help="install locked resources")
     install.add_argument("--root", type=Path, default=Path.cwd())
+    install.add_argument("--router-provider", choices=("local", "jev"), default="local")
     verify_installed = subparsers.add_parser(
         "verify-resources", help="verify installed resources"
     )
     verify_installed.add_argument("--root", type=Path, default=Path.cwd())
+    verify_installed.add_argument("--router-provider", choices=("local", "jev"), default="local")
     configure = subparsers.add_parser("configure", help="write portable local config")
     configure.add_argument("--root", type=Path, default=Path.cwd())
+    configure.add_argument("--router-provider", choices=("local", "jev"), default="local")
     args = parser.parse_args()
     if args.command == "verify-lock":
         lock = load_resource_lock(args.root / "resources.lock.json")
@@ -523,15 +556,19 @@ def _main() -> int:
             print(f"{resource.id}: {resource.kind}")
         return 0
     if args.command == "install-resources":
-        for resource_id, digest in install_resources(args.root).items():
+        for resource_id, digest in install_resources(
+            args.root, router_provider=args.router_provider
+        ).items():
             print(f"{resource_id}: {digest}")
         return 0
     if args.command == "verify-resources":
-        for resource_id, digest in verify_resources(args.root).items():
+        for resource_id, digest in verify_resources(
+            args.root, router_provider=args.router_provider
+        ).items():
             print(f"{resource_id}: {digest}")
         return 0
     if args.command == "configure":
-        generate_env(args.root)
+        generate_env(args.root, router_provider=args.router_provider)
         generate_mineru_config(args.root)
         print("portable configuration written")
         return 0

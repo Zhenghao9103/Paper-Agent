@@ -1,27 +1,27 @@
-# Paper-Agent v2
+# Paper-Agent v2.1
 
-> **本地小模型路由驱动的 Evidence-driven Agentic RAG**
+> **可选本地模型或 Jev 路由的 Evidence-driven Agentic RAG**
 
-Paper-Agent 是一个面向学术 PDF 的本地优先研究助手。它把 PDF 结构化解析、混合检索、证据管理和答案校验组织成一条可控的研究链路，并使用随仓库发布的本地小模型判断每个问题应该直接处理、执行一次 RAG，还是进入多轮 Agentic RAG。
+Paper-Agent 是一个面向学术 PDF 的本地优先研究助手。它把 PDF 结构化解析、混合检索、证据管理和答案校验组织成一条可控的研究链路，并使用本地小模型或 Jev 判断每个问题应该直接处理、执行一次 RAG，还是进入多轮 Agentic RAG。
 
 | 核心亮点 | 作用 |
 | --- | --- |
-| **本地意图 Router** | Qwen3-1.7B SFT Router 以 Q4 GGUF 随仓库发布，由 llama.cpp 在本机运行 |
+| **可选意图 Router** | 默认使用随仓库发布的 Qwen3-1.7B Q4 本地模型，也可选择 Jev API |
 | **三路按需执行** | 在 `direct`、`simple_rag`、`agentic_rag` 之间选择，避免所有问题都启动复杂 Agent |
 | **Evidence-driven Agent Loop** | 围绕 claim 拆解、证据准入、覆盖状态和答案校验执行有边界的多轮研究 |
 | **本地知识库** | MinerU、SQLite、BM25、BGE-M3、ChromaDB 与 BGE-Reranker 组成完整 PDF 入库和检索链路 |
 
 ![Paper-Agent 学术论文智能体整体框架](frontend/public/readme/paper-agent-architecture.png)
 
-## 本地小模型意图路由
+## 意图路由（本地小模型/jev）
 
-Router 不是缩小版的回答模型，而是生产链路前端的专用分类器。它只根据当前问题和有限会话上下文输出一个意图，不负责生成答案或规划检索：
+Router 根据当前问题和有限会话上下文输出一个意图，不负责生成答案或规划检索：
 
 - `direct`：文档状态等无需检索的问题直接在本地处理。
 - `simple_rag`：执行一次查询规划、混合检索、重排和基于证据的回答。
 - `agentic_rag`：复杂比较、多对象分析和多跳问题进入 Agent 研究循环。
 
-发布模型为 `Qwen3-1.7B-Router-SFT-V3-Q4_K_M.gguf`，约 1.1 GB，通过 Git LFS 管理。启动器会使用 llama.cpp 在 `127.0.0.1:8089` 托管它，因此路由本身无需外部 Router API Key；如果 Router 超时、协议错误或输出无效，系统会保守地降级到 `agentic_rag`，避免因错误分流丢失必要证据。
+本地模式使用 `Qwen3-1.7B-Router-SFT-V3-Q4_K_M.gguf`，约 1.1 GB，通过 Git LFS 管理；启动器会用 llama.cpp 在 `127.0.0.1:8089` 托管它，无需 Router API Key。Jev 模式通过配置的 API 完成同样的三分类，且不启动本地 Router。两种模式下，Router 超时、协议错误或输出无效时都会保守地降级到 `agentic_rag`。
 
 ## Evidence-driven Agentic RAG
 
@@ -37,33 +37,56 @@ Router 不是缩小版的回答模型，而是生产链路前端的专用分类�
 
 - Windows x64
 - Python 3.11（必须是 3.11）
-- Git 与 Git LFS
+- Git；选择本地 Router 时还需 Git LFS
 - 至少 20 GB 可用空间
 - 首次完整安装需要网络连接
 
 ## 完整安装
 
-先安装并初始化 Git LFS，然后克隆仓库：
-
-```powershell
-git lfs install
-git clone https://github.com/Zhenghao9103/Paper-Agent.git
-cd Paper-Agent
-.\setup.ps1
-```
-
-`setup.ps1` 默认执行完整安装：创建主环境和独立图表理解环境、安装依赖、拉取最终 Q4 Router、下载并校验 llama.cpp、BGE-M3、BGE-Reranker、MinerU 主模型、MinerU 图表模型及 tiktoken 缓存，并生成仅引用当前克隆目录的本地配置。
-
-`.mineru/`、`.tools/`、`.hf-cache/` 和 `.cache/` 都由安装脚本生成，用户不需要手动下载或提交这些目录。所有外部资源的版本和校验信息记录在 `resources.lock.json`。
-
-如只想查看代码而暂时不下载约 1.1 GB 的 Router 模型：
+克隆时先跳过 Git LFS 自动下载，再选择 Router：
 
 ```powershell
 $env:GIT_LFS_SKIP_SMUDGE="1"
 git clone https://github.com/Zhenghao9103/Paper-Agent.git
+Remove-Item Env:GIT_LFS_SKIP_SMUDGE
+cd Paper-Agent
 ```
 
-之后运行 `git lfs pull` 再执行 `setup.ps1`。
+在项目根目录创建或编辑 `.env`，用 `ROUTER_PROVIDER` 选择 Router：
+
+```dotenv
+ROUTER_PROVIDER=local
+```
+
+可填 `local` 或 `jev`；没有 `.env` 或没有这一项时默认使用 `local`。安装时运行 `.\setup.ps1`，脚本会读取该配置。也可临时用 `.\setup.ps1 -RouterProvider jev` 覆盖 `.env`，并将所选模式写回 `.env`。
+
+本地 Router 会下载约 1.1 GB 的 Q4 模型及 llama.cpp：
+
+```powershell
+git lfs install
+.\setup.ps1
+```
+
+`setup.ps1` 会创建主环境和独立图表理解环境、安装依赖、下载并校验 BGE-M3、BGE-Reranker、MinerU 主模型、MinerU 图表模型及 tiktoken 缓存，并生成仅引用当前克隆目录的本地配置。选择本地 Router 时还会拉取最终 Q4 Router 和 llama.cpp。
+
+`.mineru/`、`.hf-cache/` 和 `.cache/` 都由安装脚本生成；本地 Router 还会生成 `.tools/`。用户不需要手动下载或提交这些目录。所有外部资源的版本和校验信息记录在 `resources.lock.json`。
+
+如选择 Jev，先将根目录 `.env` 中的配置改为：
+
+```dotenv
+ROUTER_PROVIDER=jev
+JEV_API_KEY=your_api_key
+JEV_BASE_URL=
+JEV_MODEL=jev-1.13.0
+```
+
+然后运行安装脚本，无需下载本地 Q4 Router 和 llama.cpp：
+
+```powershell
+.\setup.ps1
+```
+
+Jev 模式仅省去 Router 模型与 llama.cpp，PDF 解析和检索所需模型仍照常安装。安装后改动 `.env` 的 `ROUTER_PROVIDER`，重启程序即可切换；若最初按 Jev 模式安装，切换回本地 Router 时还需运行 `.\setup.ps1` 下载本地 Router 资源。
 
 ## 配置模型服务
 
@@ -75,7 +98,7 @@ AGENT_BASE_URL=https://your-provider.example/v1
 AGENT_MODEL=your_model
 ```
 
-本地 Router 无需远程 API Key。`JUDGE_*` 仅用于开发期质量评估，发布版正常运行不需要配置。
+本地 Router 无需远程 API Key。选择 Jev 时，在根目录 `.env` 填写 `JEV_API_KEY`。使用 TypeSafe 官方密钥时可将 `JEV_BASE_URL` 留空；使用 OpenCode Zen 等渠道时，还需填写对应的 `JEV_BASE_URL` 和 `JEV_MODEL`。`JUDGE_*` 仅用于开发期质量评估，发布版正常运行不需要配置。
 
 ## 启动与使用
 
@@ -97,7 +120,7 @@ $env:PAPER_AGENT_OPEN_BROWSER="0"
 - MinerU PDF 结构化解析、公式识别与图表理解
 - SQLite 文档存储与 BM25 全文检索
 - BGE-M3 向量召回、ChromaDB 本地索引和 BGE-Reranker 精排
-- 本地 Qwen3-1.7B Q4 GGUF Router 与 llama.cpp 托管
+- 可选本地 Qwen3-1.7B Q4 GGUF Router 或 Jev API
 - `direct`、`simple_rag`、`agentic_rag` 三类按需问答路径
 - Research Planner、Evidence Judge、Evidence Pool、Evidence Pack 与 Answer Verifier
 - 工具预算、超时、Schema 校验、引用验证和安全轨迹记录
