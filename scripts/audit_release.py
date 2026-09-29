@@ -19,6 +19,7 @@ ALLOWED_ROOTS = {
     "LICENSE",
     "README.md",
     "backend",
+    "eval",
     "frontend",
     "main.py",
     "models",
@@ -43,7 +44,7 @@ FORBIDDEN_COMPONENTS = {
     "__tests__",
 }
 SECRET_RE = re.compile(
-    r"(?im)^(?:AGENT|OPENAI|ROUTER|JUDGE)_API_KEY[\t ]*=[\t ]*"
+    r"(?im)^(?:AGENT|OPENAI|ROUTER|JUDGE|JEV)_API_KEY[\t ]*=[\t ]*"
     r"(?!$|your_|example|<)[^\t \r\n#]{8,}"
 )
 
@@ -79,7 +80,11 @@ def audit_release_tree(
         )
     )
     unexpected_roots = tuple(
-        sorted(path for path in normalized if PurePosixPath(path).parts[0] not in ALLOWED_ROOTS)
+        sorted(
+            path for path in normalized
+            if PurePosixPath(path).parts[0] not in ALLOWED_ROOTS
+            or (path.startswith("eval/") and not path.startswith("eval/router/") and path != "eval/__init__.py")
+        )
     )
     models = tuple(sorted(path for path in normalized if path.lower().endswith(".gguf")))
     unexpected_models = tuple(path for path in models if path != SELECTED_MODEL)
