@@ -1,0 +1,25 @@
+{
+  "models": [
+    {
+      "id": "qwen3-1.7b-router-sft-v3-q4-k-m",
+      "display_name": "Router V3 Q4_K_M",
+      "served_model": "qwen3-1.7b-router-sft-v3-q4-k-m",
+      "quantization": "Q4_K_M",
+      "path": "models/router/qwen3-1.7b-router-sft-v3/Qwen3-1.7B-Router-SFT-V3-Q4_K_M.gguf"
+    },
+    {
+      "id": "qwen3-1.7b-router-sft-v3-q8-0",
+      "display_name": "Router V3 Q8_0",
+      "served_model": "qwen3-1.7b-router-sft-v3-q8-0",
+      "quantization": "Q8_0",
+      "path": "models/router/qwen3-1.7b-router-sft-v3/Qwen3-1.7B-Router-SFT-V3-Q8_0.gguf"
+    },
+    {
+      "id": "qwen3-1.7b-router-sft-v3-f16",
+      "display_name": "Router V3 F16",
+      "served_model": "qwen3-1.7b-router-sft-v3-f16",
+      "quantization": "F16",
+      "path": "models/router/qwen3-1.7b-router-sft-v3/Qwen3-1.7B-Router-SFT-V3-F16.gguf"
+    }
+  ]
+}
