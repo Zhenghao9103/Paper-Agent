@@ -1,0 +1,979 @@
+{
+  "name": "papers-20-gold-v1",
+  "version": "1.0.0",
+  "description": "PDF-page-reviewed bilingual RAG gold dataset over 20 spectral and deep clustering papers.",
+  "corpus": [
+    {"key": "aknn", "file_prefix": "A-new-method-to-build-the-adaptive-k-nearest-neighbors-similarity-graph-matrix-for-spectral-clustering", "title": "A new method to build the adaptive k-nearest neighbors similarity graph matrix for spectral clustering"},
+    {"key": "bootsc", "file_prefix": "Bootstrap-Deep-Spectral-Clustering-with-Optimal-Transport", "title": "Bootstrap Deep Spectral Clustering with Optimal Transport"},
+    {"key": "kan", "file_prefix": "Deep-Clustering-Based-on-Sparse-Kolmogorov-Arnold-Network-and-Spectral-Constraint", "title": "Deep Clustering Based on Sparse Kolmogorov-Arnold Network and Spectral Constraint"},
+    {"key": "clusmatch", "file_prefix": "ClusMatch-improving-deep-clustering-by-unified-positive-and-negative-pseudo-label-learning", "title": "ClusMatch: Improving Deep Clustering by Unified Positive and Negative Pseudo-Label Learning"},
+    {"key": "dtscn", "file_prefix": "Deep_Tensor_Spectral_Clustering_Network_via_Ensemble_of_Multiple_Affinity_Tensors", "title": "Deep Tensor Spectral Clustering Network via Ensemble of Multiple Affinity Tensors"},
+    {"key": "dpac", "file_prefix": "DPAC", "title": "Deep Online Probability Aggregation Clustering"},
+    {"key": "dtsc", "file_prefix": "Discriminating_Tensor_Spectral_Clustering_for_High-Dimension-Low-Sample-Size_Data", "title": "Discriminating Tensor Spectral Clustering for High-Dimension-Low-Sample-Size Data"},
+    {"key": "dsc_lsp", "file_prefix": "DSC-LSP", "title": "Deep spectral clustering by integrating local structure and prior information"},
+    {"key": "dsc", "file_prefix": "DSC", "title": "Deep Spectral Clustering via Joint Spectral Embedding and Kmeans"},
+    {"key": "dynamic_sc", "file_prefix": "Dynamic-Spectral-Clustering-with-Provable-Approximation-Guarantee", "title": "Dynamic Spectral Clustering with Provable Approximation Guarantee"},
+    {"key": "senet", "file_prefix": "Learning_a_Self-Expressive_Network_for_Subspace_Clustering", "title": "Learning a Self-Expressive Network for Subspace Clustering"},
+    {"key": "lfss", "file_prefix": "LFSS", "title": "Learning from Sample Stability for Deep Clustering"},
+    {"key": "ppot", "file_prefix": "PPOT", "title": "P2OT: Progressive Partial Optimal Transport for Deep Imbalanced Clustering"},
+    {"key": "ssc_clnm", "file_prefix": "Semantic-Spectral-Clustering-with-Contrastive-Learning-and-Neighbor-Mining", "title": "Semantic Spectral Clustering with Contrastive Learning and Neighbor Mining"},
+    {"key": "sadse", "file_prefix": "SADSE", "title": "Learning Structure Aware Deep Spectral Embedding"},
+    {"key": "sctp", "file_prefix": "Spectral-clustering-and-embedding-with-inter-class-topology-preserving", "title": "Spectral clustering and embedding with inter-class topology-preserving"},
+    {"key": "mlsvd_sc", "file_prefix": "Spectral-Clustering-Using-Multilinear-SVD-Analysis-Approximations-and-Applications", "title": "Spectral Clustering Using Multilinear SVD: Analysis, Approximations and Applications"},
+    {"key": "scd", "file_prefix": "Stable-Cluster-Discrimination-for-Deep-Clustering", "title": "Stable Cluster Discrimination for Deep Clustering"},
+    {"key": "subgraph_ec", "file_prefix": "The-subgraph-eigenvector-centrality-of-graphs", "title": "The subgraph eigenvector centrality of graphs"},
+    {"key": "specnet2", "file_prefix": "SpecNet2", "title": "SpecNet2: Orthogonalization-free spectral embedding by neural networks"}
+  ],
+  "cases": [
+    {
+      "case_id": "single-001", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "AKNNG 如何为不同数据点自适应确定近邻数量？",
+      "reference_answer": "AKNNG 先设定最大近邻数 k_max，再利用相似图的 m 次幂变换剪除每个数据点的弱连接，从而为不同数据点分配不超过 k_max 的不同 k 值。",
+      "answer_points": ["设置最大近邻数 k_max", "通过 m 次幂变换剪除弱连接", "不同数据点使用不同 k"],
+      "gold": [{"doc": "aknn", "pages": [1]}], "gold_keywords": ["k_max", "weak connections", "m powers"],
+      "evidence": [{"doc": "aknn", "page": 1, "text": "It sets a maximum number of the nearest neighbors k_max and assigns a different k value for each data point; k is adjusted automatically by cutting weak connections according to the m powers transform."}],
+      "acceptable_variants": ["adaptive k-nearest neighbors", "AKNNG", "自适应 k 近邻"], "required_documents": ["aknn"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-002", "language": "en", "task_type": "single_paper", "difficulty": "medium",
+      "question": "Which optimality conditions are used to solve AKNNG's probability-weight objective?",
+      "reference_answer": "The paper applies the standard Karush-Kuhn-Tucker (KKT) conditions to solve the objective.",
+      "answer_points": ["Identify the Karush-Kuhn-Tucker conditions", "Connect KKT to the probability-weight objective"],
+      "gold": [{"doc": "aknn", "pages": [4]}], "gold_keywords": ["Karush", "KKT"],
+      "evidence": [{"doc": "aknn", "page": 4, "text": "The standard Karush-Kuhn-Tucker (KKT) conditions are used to solve problem (2)."}],
+      "acceptable_variants": ["KKT conditions", "Karush-Kuhn-Tucker"], "required_documents": ["aknn"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-003", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "AKNNG 论文指出其欧氏距离度量在哪类数据上可能失真？",
+      "reference_answer": "论文指出欧氏距离有时不能准确表达高维或稀疏数据（如图像和文本）的真实关系，可能因此构造错误的相似图。",
+      "answer_points": ["指出高维或稀疏数据", "说明欧氏距离可能导致错误相似图"],
+      "gold": [{"doc": "aknn", "pages": [11]}], "gold_keywords": ["high dimension", "sparse data", "Euclidean distance"],
+      "evidence": [{"doc": "aknn", "page": 11, "text": "Euclidean distance is not an accurate representation of the true relationship of some high dimension or sparse data (e.g. images and texts), and can build an incorrect similarity graph."}],
+      "acceptable_variants": ["高维数据", "稀疏数据", "images and texts"], "required_documents": ["aknn"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-004", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "BootSC 用最优传输产生的监督联合优化了谱聚类的哪些阶段？",
+      "reference_answer": "BootSC 在一个端到端网络中联合学习亲和矩阵构造、谱嵌入和 k-means 聚类，并用最优传输产生的监督引导亲和矩阵与簇分配矩阵。",
+      "answer_points": ["亲和矩阵构造", "谱嵌入", "k-means 聚类", "最优传输监督亲和与簇分配"],
+      "gold": [{"doc": "bootsc", "pages": [1]}], "gold_keywords": ["optimal transport", "affinity matrix", "cluster assignment"],
+      "evidence": [{"doc": "bootsc", "page": 1, "text": "BootSC jointly learns affinity matrix construction, spectral embedding, and k-means clustering, and leverages optimal-transport-derived supervision to bootstrap the affinity matrix and cluster assignment matrix."}],
+      "acceptable_variants": ["OT", "end-to-end spectral clustering"], "required_documents": ["bootsc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-005", "language": "en", "task_type": "single_paper", "difficulty": "hard",
+      "question": "What method does BootSC use instead of QR-based output mapping to obtain semantically consistent orthogonal embeddings?",
+      "reference_answer": "BootSC uses an orthogonal Procrustes re-parameterization, which finds an orthogonal mapping while minimizing semantic inconsistency.",
+      "answer_points": ["Name orthogonal Procrustes", "Explain that it minimizes semantic inconsistency"],
+      "gold": [{"doc": "bootsc", "pages": [5]}], "gold_keywords": ["orthogonal Procrustes", "semantic inconsistency"],
+      "evidence": [{"doc": "bootsc", "page": 5, "text": "We leverage orthogonal Procrustes for orthogonalization, which finds the orthogonal matrix that most closely maps a given matrix to another."}],
+      "acceptable_variants": ["Procrustes orthogonalization", "orthogonal re-parameterization"], "required_documents": ["bootsc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-006", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "BootSC 针对资源受限设备提出了哪些未来效率改进方向？",
+      "reference_answer": "论文计划将 BootSC 与模型量化和知识蒸馏结合，以在维持聚类性能的同时提高边缘设备等资源受限环境中的效率。",
+      "answer_points": ["模型量化", "知识蒸馏", "面向资源受限或边缘设备"],
+      "gold": [{"doc": "bootsc", "pages": [11]}], "gold_keywords": ["model quantization", "knowledge distillation", "edge devices"],
+      "evidence": [{"doc": "bootsc", "page": 11, "text": "We would like to integrate BootSC with techniques like model quantization and knowledge distillation to improve efficiency while maintaining clustering performance."}],
+      "acceptable_variants": ["quantization", "distillation"], "required_documents": ["bootsc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-007", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "稀疏 KAN 同时使用哪两类正则化来获得稀疏性并维持激活函数多样性？",
+      "reference_answer": "它使用全局组 Lasso（GGL）实现组级稀疏，并使用熵正则化保持激活函数分布的多样性。",
+      "answer_points": ["全局组 Lasso/GGL", "熵正则化", "分别对应组级稀疏和函数多样性"],
+      "gold": [{"doc": "kan", "pages": [2]}], "gold_keywords": ["Global Group Lasso", "entropy regularization"],
+      "evidence": [{"doc": "kan", "page": 2, "text": "We propose a multi-regularization constraint mechanism into KAN, including Global Group Lasso regularization (GGL) and entropy regularization."}],
+      "acceptable_variants": ["GGL", "group lasso", "entropy loss"], "required_documents": ["kan"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-008", "language": "en", "task_type": "single_paper", "difficulty": "hard",
+      "question": "How does the sparse KAN model construct its orthogonal output matrix?",
+      "reference_answer": "It perturbs the Gram matrix of the network output to make it positive definite, applies Cholesky decomposition Y^T Y = A A^T, and right-multiplies Y by the inverse-transpose square-root factor to obtain the orthogonal matrix.",
+      "answer_points": ["Form or perturb the Gram matrix", "Apply Cholesky decomposition", "Right-transform Y to obtain orthogonality"],
+      "gold": [{"doc": "kan", "pages": [3]}], "gold_keywords": ["Cholesky decomposition", "Gram matrix", "orthogonal"],
+      "evidence": [{"doc": "kan", "page": 3, "text": "Calculate the Gram matrix of Y and make it positive definite by adding small perturbation. Then we construct A by Cholesky decomposition Y^T Y = A A^T."}],
+      "acceptable_variants": ["Cholesky factorization", "orthogonal layer"], "required_documents": ["kan"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-009", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "稀疏 KAN 论文中的谱约束如何利用亲和矩阵保持流形信息？",
+      "reference_answer": "谱约束通过拉普拉斯矩阵编码流形信息，并利用亲和矩阵使原空间中高相似的数据点在嵌入空间保持接近、低相似点被推远；亲和矩阵还会自适应优化。",
+      "answer_points": ["拉普拉斯矩阵编码流形", "相似点靠近、非相似点远离", "亲和矩阵自适应优化"],
+      "gold": [{"doc": "kan", "pages": [4]}], "gold_keywords": ["Laplacian", "affinity matrix", "manifold"],
+      "evidence": [{"doc": "kan", "page": 4, "text": "Spectral constraint encodes manifold information by the Laplacian matrix L, and uses the affinity matrix S to ensure that highly similar data points remain close while dissimilar points are pushed away."}],
+      "acceptable_variants": ["spectral constraint", "graph Laplacian"], "required_documents": ["kan"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-010", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "ClusMatch 如何把已有深度聚类模型转化为半监督微调框架？",
+      "reference_answer": "ClusMatch 先用预训练聚类网络预测全部样本，选择少量高质量样本作为带标签数据，再对未选择样本使用统一的正、负伪标签学习进行半监督微调。",
+      "answer_points": ["使用预训练聚类预测", "选择高质量带标签样本", "未选择样本使用正负伪标签"],
+      "gold": [{"doc": "clusmatch", "pages": [1]}], "gold_keywords": ["semi-supervised", "positive and negative pseudo-label"],
+      "evidence": [{"doc": "clusmatch", "page": 1, "text": "We leverage the pre-trained deep clustering network, select high-quality samples as labeled samples, and introduce unified positive and negative pseudo-label learning for the unselected samples."}],
+      "acceptable_variants": ["positive-negative pseudo-label learning", "semi-supervised fine-tuning"], "required_documents": ["clusmatch"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-011", "language": "en", "task_type": "single_paper", "difficulty": "medium",
+      "question": "What does negative pseudo-label learning encourage ClusMatch to do with impossible categories?",
+      "reference_answer": "It drives the predicted probability of negatively labeled, unlikely categories toward zero, so the network spends less effort on impossible assignments and can correct positive labels more accurately.",
+      "answer_points": ["Push unlikely-category probability toward zero", "Reduce effort on impossible categories"],
+      "gold": [{"doc": "clusmatch", "pages": [5]}], "gold_keywords": ["negative label", "close to zero", "impossible categories"],
+      "evidence": [{"doc": "clusmatch", "page": 5, "text": "The objective aims to make the probability corresponding to the negative category close to zero; the network can avoid allocating more effort to impossible categories."}],
+      "acceptable_variants": ["negative learning", "negative pseudo-label"], "required_documents": ["clusmatch"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-012", "language": "zh", "task_type": "single_paper", "difficulty": "hard",
+      "question": "ClusMatch 的正阈值如何随负阈值的学习状态变化？",
+      "reference_answer": "随着网络对负标签更确定，负阈值下降，而由其构造的正阈值增大，表示网络识别正标签的能力增强。",
+      "answer_points": ["负阈值随确定性增强而下降", "正阈值随之增大", "反映正标签识别能力增强"],
+      "gold": [{"doc": "clusmatch", "pages": [6]}], "gold_keywords": ["negative threshold decreases", "positive threshold larger"],
+      "evidence": [{"doc": "clusmatch", "page": 6, "text": "As the network becomes more certain of the negative labels, the negative threshold decreases, thus making the positive threshold larger and larger."}],
+      "acceptable_variants": ["adaptive positive-negative threshold", "动态阈值"], "required_documents": ["clusmatch"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-013", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "TSC-Net 相比传统张量谱聚类如何同时实现一阶段学习和低内存开销？",
+      "reference_answer": "TSC-Net 用神经网络把样本映射到共识张量谱嵌入，在一个目标中集成多个亲和张量，并通过随机优化只计算部分张量，避免存储完整高阶亲和张量。",
+      "answer_points": ["神经网络学习共识张量谱嵌入", "一阶段集成多个亲和张量", "随机优化避免完整张量存储"],
+      "gold": [{"doc": "dtscn", "pages": [1]}], "gold_keywords": ["one-stage", "stochastic optimization", "multiple affinity tensors"],
+      "evidence": [{"doc": "dtscn", "page": 1, "text": "TSC-Net achieves one-stage learning of a consensus tensor spectral embedding and uses stochastic optimization to calculate a small part of the affinity tensors, reducing memory cost."}],
+      "acceptable_variants": ["TSC-Net", "tensor spectral clustering network"], "required_documents": ["dtscn"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-014", "language": "en", "task_type": "single_paper", "difficulty": "medium",
+      "question": "Why can TSC-Net avoid storing a complete high-order affinity tensor?",
+      "reference_answer": "It approximates the tensor spectral embedding with a neural network and trains stochastically, constructing or calculating only a small batch-wise portion of the affinity tensors at a time.",
+      "answer_points": ["Neural network approximates the embedding", "Stochastic or batch-wise tensor construction", "No complete tensor storage"],
+      "gold": [{"doc": "dtscn", "pages": [5, 6]}], "gold_keywords": ["stochastic", "small part", "whole affinity tensor"],
+      "evidence": [{"doc": "dtscn", "page": 5, "text": "TSC-Net approximates the tensor spectral embedding and can be trained in a stochastic manner to avoid storing the whole Kth order affinity tensor."}, {"doc": "dtscn", "page": 6, "text": "Stochastic optimization allows TSC-Net to calculate a small part of the affinity tensors at each time."}],
+      "acceptable_variants": ["mini-batch", "batch-wise affinity tensor"], "required_documents": ["dtscn"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-015", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "TSC-Net 论文认为多亲和张量集成仍存在哪个潜在局限？",
+      "reference_answer": "多个亲和张量可能包含冗余，带来额外计算成本，而且增加复杂度未必总能提升聚类性能；论文建议未来选择或加权最有信息的张量。",
+      "answer_points": ["多张量可能冗余", "增加计算成本", "可选择或加权信息量高的张量"],
+      "gold": [{"doc": "dtscn", "pages": [11]}], "gold_keywords": ["redundancy", "computational costs", "select or weight"],
+      "evidence": [{"doc": "dtscn", "page": 11, "text": "Multiple affinity tensors may result in computational redundancy and increased computational costs; future work could select or weight the most informative affinity tensors."}],
+      "acceptable_variants": ["affinity tensor redundancy", "张量选择"], "required_documents": ["dtscn"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-016", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "PAC 为什么被称为无中心聚类方法？",
+      "reference_answer": "PAC 不显式使用簇中心，而把聚类写成概率聚合优化，使概率空间与分布空间对齐，并据此形成可在线部署的 DPAC。",
+      "answer_points": ["不使用簇中心", "通过概率聚合进行聚类", "对齐概率空间和分布空间"],
+      "gold": [{"doc": "dpac", "pages": [1]}], "gold_keywords": ["centerless", "probability aggregation", "probability space"],
+      "evidence": [{"doc": "dpac", "page": 1, "text": "PAC circumvents the cluster center and aligns the probability space and distribution space by formulating clustering as an optimization problem."}],
+      "acceptable_variants": ["Probability Aggregation Clustering", "无簇中心"], "required_documents": ["dpac"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-017", "language": "en", "task_type": "single_paper", "difficulty": "medium",
+      "question": "What properties make PAC suitable for online deep clustering?",
+      "reference_answer": "Probability aggregation permits calculations on partial samples, so DPAC can process mini-batches flexibly without constraints on cluster size.",
+      "answer_points": ["Partial-sample calculation", "Flexible online or mini-batch clustering", "No cluster-size constraint"],
+      "gold": [{"doc": "dpac", "pages": [14]}], "gold_keywords": ["part samples", "online", "no constraints on cluster size"],
+      "evidence": [{"doc": "dpac", "page": 14, "text": "PAC implements clustering through sample probability aggregation, which makes part samples based calculation possible; DPAC has no constraints on cluster size."}],
+      "acceptable_variants": ["partial samples", "online probability aggregation"], "required_documents": ["dpac"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-018", "language": "zh", "task_type": "single_paper", "difficulty": "easy",
+      "question": "DPAC 试图解决传统深度聚类交替训练日程的哪两个问题？",
+      "reference_answer": "它针对特征聚类与模型训练交替进行所导致的训练不稳定和计算负担问题。",
+      "answer_points": ["训练不稳定", "计算负担"],
+      "gold": [{"doc": "dpac", "pages": [1]}], "gold_keywords": ["instability", "computational burden"],
+      "evidence": [{"doc": "dpac", "page": 1, "text": "Such alternating schedules may lead to instability and computational burden issues."}],
+      "acceptable_variants": ["unstable training", "computational overhead"], "required_documents": ["dpac"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-019", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "DTSC 为高维小样本数据设计的判别亲和张量编码了什么相似性？",
+      "reference_answer": "DTSC 用基于锚点距离构造的判别亲和张量编码成对样本对之间的 pair-to-pair 相似性，以缓解高维距离集中效应。",
+      "answer_points": ["pair-to-pair 相似性", "由 anchor-based distance 构造", "面向 HDLSS 的距离集中问题"],
+      "gold": [{"doc": "dtsc", "pages": [1, 5]}], "gold_keywords": ["pair-to-pair", "anchor-based distance", "HDLSS"],
+      "evidence": [{"doc": "dtsc", "page": 1, "text": "DTSC uses a discriminating affinity tensor that encodes pair-to-pair similarities, constructed by the anchor-based distance."}],
+      "acceptable_variants": ["discriminating affinity tensor", "锚点距离"], "required_documents": ["dtsc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-020", "language": "en", "task_type": "single_paper", "difficulty": "hard",
+      "question": "How does DTSC sparsify construction of its discriminating affinity tensor?",
+      "reference_answer": "For each sample it keeps the top-k nearest neighbors, forms k(k-1)/2 neighbor pairs, computes pair-to-pair similarities for the selected groups, and sets the remaining tensor entries to zero.",
+      "answer_points": ["Select top-k nearest neighbors", "Form k(k-1)/2 pairs", "Set remaining entries to zero"],
+      "gold": [{"doc": "dtsc", "pages": [6]}], "gold_keywords": ["top k nearest neighbors", "k(k-1)/2", "set to 0"],
+      "evidence": [{"doc": "dtsc", "page": 6, "text": "We choose the top k nearest neighbors and generate k(k-1)/2 pairs; the remaining entries of the discriminating affinity tensor are set to 0."}],
+      "acceptable_variants": ["sampling strategy", "sparse affinity tensor"], "required_documents": ["dtsc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-021", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "DTSC 论文明确指出该方法仍有哪两个工程局限？",
+      "reference_answer": "DTSC 仍需构造高内存开销的亲和张量，并且不能联合进行特征学习与聚类；作者建议未来引入深度网络和随机优化。",
+      "answer_points": ["亲和张量内存开销高", "不能联合特征学习和聚类", "建议深度网络与随机优化"],
+      "gold": [{"doc": "dtsc", "pages": [10]}], "gold_keywords": ["high memory cost", "feature learning and clustering jointly", "deep neural network"],
+      "evidence": [{"doc": "dtsc", "page": 10, "text": "The method needs to construct an affinity tensor, which requires high memory cost, and is not able to perform feature learning and clustering jointly."}],
+      "acceptable_variants": ["memory-intensive tensor", "two-stage limitation"], "required_documents": ["dtsc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-022", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "DSC-LSP 如何改造 mini-batch 采样以保留局部结构？",
+      "reference_answer": "它在随机选出的 m1 个样本之外，把这些样本的近邻加入同一 mini-batch，使网络能学习点与近邻在嵌入后仍保持接近。",
+      "answer_points": ["随机样本的近邻加入 batch", "暴露局部结构", "保持点与近邻接近"],
+      "gold": [{"doc": "dsc_lsp", "pages": [6]}], "gold_keywords": ["nearest neighbors", "mini-batch", "local structural information"],
+      "evidence": [{"doc": "dsc_lsp", "page": 6, "text": "We add the nearest neighbors of randomly selected points in each mini-batch so the network can learn an embedding where points and their nearest neighbors remain close."}],
+      "acceptable_variants": ["batch augmentation", "neighbor-augmented mini-batch"], "required_documents": ["dsc_lsp"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-023", "language": "en", "task_type": "single_paper", "difficulty": "hard",
+      "question": "How do core points provide global structural guidance in DSC-LSP?",
+      "reference_answer": "DSC-LSP computes traditional spectral embeddings for representative core points and uses them as priors, requiring the network's core-point embeddings to stay close to those orthogonal reference embeddings.",
+      "answer_points": ["Select representative core points", "Compute traditional spectral embeddings", "Use them as orthogonal priors for network training"],
+      "gold": [{"doc": "dsc_lsp", "pages": [7]}], "gold_keywords": ["core points", "prior information", "approximately orthogonal"],
+      "evidence": [{"doc": "dsc_lsp", "page": 7, "text": "We utilize the traditional spectral embeddings of core points to guide network training; as these embeddings are orthogonal, the learned embeddings are also approximately orthogonal."}],
+      "acceptable_variants": ["representative points", "core-point guidance"], "required_documents": ["dsc_lsp"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-024", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "DSC-LSP 为什么具有样本外扩展能力？",
+      "reference_answer": "它用神经网络近似谱聚类映射，训练后可直接把未见样本映射到谱嵌入空间，无需对全部数据重新做谱分解。",
+      "answer_points": ["神经网络学习谱映射", "可直接映射未见样本", "无需整体重新嵌入"],
+      "gold": [{"doc": "dsc_lsp", "pages": [1, 12]}], "gold_keywords": ["out-of-sample", "unseen", "neural network mapping"],
+      "evidence": [{"doc": "dsc_lsp", "page": 12, "text": "SpectralNet approximates spectral clustering with a neural network mapping and can easily extend the embedding to unseen points."}],
+      "acceptable_variants": ["out-of-sample extension", "unseen data"], "required_documents": ["dsc_lsp"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-025", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "DSC 的两个核心模块分别如何生成嵌入和改善聚类？",
+      "reference_answer": "谱嵌入模块通过深度神经网络和幂迭代学习谱嵌入；贪心 k-means 模块反复找出最差簇结构的方向并沿该方向优化嵌入。",
+      "answer_points": ["深度网络和幂迭代生成谱嵌入", "贪心 k-means 找最差簇结构方向", "联合端到端优化"],
+      "gold": [{"doc": "dsc", "pages": [1]}], "gold_keywords": ["power iteration", "greedy Kmeans", "worst cluster structures"],
+      "evidence": [{"doc": "dsc", "page": 1, "text": "The spectral embedding module uses deep neural networks and power iteration; the greedy Kmeans module iteratively reveals the direction of the worst cluster structures and optimizes embeddings in this direction."}],
+      "acceptable_variants": ["spectral embedding module", "greedy k-means module"], "required_documents": ["dsc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-026", "language": "en", "task_type": "single_paper", "difficulty": "hard",
+      "question": "How is local density incorporated into DSC's self-tuning affinity matrix?",
+      "reference_answer": "For each autoencoder embedding, DSC sets a local scale sigma_i to the distance from that point to its M-th nearest neighbor and uses this scale in the self-tuning affinity.",
+      "answer_points": ["Use autoencoder embeddings", "Define sigma_i using the M-th nearest neighbor", "Use sigma_i as a local-density scale"],
+      "gold": [{"doc": "dsc", "pages": [3]}], "gold_keywords": ["self-tuning affinity", "local density", "M-nearest neighbor"],
+      "evidence": [{"doc": "dsc", "page": 3, "text": "sigma_i is a scaling parameter that reflects local density information and is defined by the distance to the M-nearest neighbor."}],
+      "acceptable_variants": ["local scaling", "self-tuning kernel"], "required_documents": ["dsc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-027", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "DSC 的贪心 k-means 目标为何要与谱嵌入生成联合优化？",
+      "reference_answer": "传统 k-means 目标独立于谱嵌入生成，可能得到不理想的簇；DSC 将该目标融入嵌入生成，使嵌入更适合 k-means。",
+      "answer_points": ["指出传统两阶段目标独立", "将 k-means 目标融入嵌入生成", "获得 k-means-friendly embeddings"],
+      "gold": [{"doc": "dsc", "pages": [4]}], "gold_keywords": ["Kmeans-friendly", "fusing", "spectral embeddings"],
+      "evidence": [{"doc": "dsc", "page": 4, "text": "We propose fusing the Kmeans objective into the generation process of the spectral embeddings, thereby obtaining Kmeans-friendly embeddings."}],
+      "acceptable_variants": ["joint optimization", "end-to-end"], "required_documents": ["dsc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-028", "language": "zh", "task_type": "single_paper", "difficulty": "hard",
+      "question": "动态谱聚类论文给出的更新与查询复杂度保证是什么？",
+      "reference_answer": "在其簇结构条件下，算法的摊销更新复杂度为 O(1)，查询时间为 o(n_T)，并近似最终图 G_T 的簇。",
+      "answer_points": ["摊销更新时间 O(1)", "查询时间 o(n_T)", "针对动态增长图"],
+      "gold": [{"doc": "dynamic_sc", "pages": [1]}], "gold_keywords": ["O(1)", "o(n_T)", "amortised update"],
+      "evidence": [{"doc": "dynamic_sc", "page": 1, "text": "The algorithm runs in amortised update time O(1) and query time o(n_T)."}],
+      "acceptable_variants": ["constant amortized update", "sublinear query"], "required_documents": ["dynamic_sc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-029", "language": "en", "task_type": "single_paper", "difficulty": "medium",
+      "question": "How is the dynamic cluster-preserving sparsifier maintained when graph degrees change?",
+      "reference_answer": "Edges are sampled with probabilities proportional to their endpoints' degrees, and affected edges are resampled when those degrees change significantly.",
+      "answer_points": ["Degree-proportional edge sampling", "Resample after significant degree changes", "Maintain a cluster-preserving sparsifier"],
+      "gold": [{"doc": "dynamic_sc", "pages": [2]}], "gold_keywords": ["sampling edges", "degrees", "resampled"],
+      "evidence": [{"doc": "dynamic_sc", "page": 2, "text": "The algorithm is based on sampling edges with probability proportional to the degrees of their endpoints, and these edges get resampled if their degrees have significantly changed."}],
+      "acceptable_variants": ["degree-based sampling", "dynamic sparsifier"], "required_documents": ["dynamic_sc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-030", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "动态谱聚类主算法由哪三个运行阶段组成？",
+      "reference_answer": "主算法包含预处理阶段、每条新边到达时的更新阶段，以及请求新聚类结果时的查询阶段。",
+      "answer_points": ["预处理", "更新", "查询"],
+      "gold": [{"doc": "dynamic_sc", "pages": [7]}], "gold_keywords": ["Preprocessing Stage", "Update Stage", "Query Stage"],
+      "evidence": [{"doc": "dynamic_sc", "page": 7, "text": "Our main algorithm consists of the preprocessing stage, update stage, and query stage."}],
+      "acceptable_variants": ["preprocessing/update/query", "三阶段"], "required_documents": ["dynamic_sc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-031", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "SENet 如何缓解传统自表达模型难以处理样本外和大规模数据的问题？",
+      "reference_answer": "SENet 用神经网络学习可泛化的自表达函数，而不是为固定数据集直接存储数量随样本数平方增长的系数，因此能处理未见样本和大规模数据。",
+      "answer_points": ["神经网络学习自表达函数", "避免固定的二次规模系数", "支持样本外和大规模数据"],
+      "gold": [{"doc": "senet", "pages": [1]}], "gold_keywords": ["out-of-sample", "quadratically", "Self-Expressive Network"],
+      "evidence": [{"doc": "senet", "page": 1, "text": "SENet learns a self-expressive representation, handles out-of-sample data, and can perform subspace clustering on large-scale datasets."}],
+      "acceptable_variants": ["self-expressive function", "out-of-sample generalization"], "required_documents": ["senet"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-032", "language": "en", "task_type": "single_paper", "difficulty": "hard",
+      "question": "What are the query and key networks in SENet, and what operator follows their interaction?",
+      "reference_answer": "The query network u and key network v are two learnable MLP mappings into a p-dimensional space; their interaction is passed through a learnable soft-thresholding operator to form self-expressive coefficients.",
+      "answer_points": ["Query and key are MLPs", "They map to a p-dimensional space", "A learnable soft-thresholding operator is used"],
+      "gold": [{"doc": "senet", "pages": [4]}], "gold_keywords": ["query and key networks", "MLPs", "soft thresholding"],
+      "evidence": [{"doc": "senet", "page": 4, "text": "The query and key networks are two multilayer perceptrons, and T_b is a learnable soft thresholding operator."}],
+      "acceptable_variants": ["u and v networks", "soft-threshold operator"], "required_documents": ["senet"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-033", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "SENet 论文用什么训练方式学习网络，并由什么能力支持大规模聚类？",
+      "reference_answer": "论文提出两种基于随机梯度下降的训练算法；训练后对未见样本的样本外泛化能力使 SENet 能高效处理大规模数据集。",
+      "answer_points": ["两种 SGD 训练算法", "样本外能力", "支持大规模数据"],
+      "gold": [{"doc": "senet", "pages": [8]}], "gold_keywords": ["stochastic gradient descent", "out-of-sample", "large-scale"],
+      "evidence": [{"doc": "senet", "page": 8, "text": "We presented two stochastic gradient descent based training algorithms and verified that the out-of-sample ability enables SENet to efficiently handle large-scale datasets."}],
+      "acceptable_variants": ["SGD", "stochastic training"], "required_documents": ["senet"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-034", "language": "zh", "task_type": "single_paper", "difficulty": "hard",
+      "question": "LFSS 如何定义某个样本在第 t 个 epoch 的样本稳定性？",
+      "reference_answer": "LFSS 用同一样本在连续两个 epoch 的表示向量之间的余弦相似度定义样本稳定性；值越低表示该样本表示越不稳定。",
+      "answer_points": ["连续两个 epoch", "表示向量余弦相似度", "低值表示不稳定"],
+      "gold": [{"doc": "lfss", "pages": [2]}], "gold_keywords": ["cosine similarity", "two consecutive epochs", "sample stability"],
+      "evidence": [{"doc": "lfss", "page": 2, "text": "We define sample stability as the cosine similarity of the representations of the same sample across two consecutive epochs."}],
+      "acceptable_variants": ["representation stability", "跨 epoch 余弦相似度"], "required_documents": ["lfss"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-035", "language": "en", "task_type": "single_paper", "difficulty": "medium",
+      "question": "At which levels does LFSS use sample-stability signals, and what additional training mechanism is combined with them?",
+      "reference_answer": "LFSS uses stability signals at both the instance and cluster levels and combines them with self-distillation.",
+      "answer_points": ["Instance level", "Cluster level", "Self-distillation"],
+      "gold": [{"doc": "lfss", "pages": [4]}], "gold_keywords": ["instance", "cluster", "self-distillation"],
+      "evidence": [{"doc": "lfss", "page": 4, "text": "LFSS capitalizes on sample stability signals from both the instance and cluster levels, in conjunction with self-distillation."}],
+      "acceptable_variants": ["instance-level and cluster-level stability", "self distillation"], "required_documents": ["lfss"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-036", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "LFSS 对长期不稳定样本的训练现象得出了什么结论？",
+      "reference_answer": "不稳定样本更容易被错误聚类；长期不稳定样本也更难被网络记忆，通常在原始特征上更复杂或更独特。",
+      "answer_points": ["更容易误聚类", "更难被网络记忆", "原始特征复杂或独特"],
+      "gold": [{"doc": "lfss", "pages": [9]}], "gold_keywords": ["misclustering", "memorization", "complexity and uniqueness"],
+      "evidence": [{"doc": "lfss", "page": 9, "text": "Unstable samples are more prone to misclustering, and samples exhibiting prolonged instability pose challenges for network memorization."}],
+      "acceptable_variants": ["unstable samples", "hard-to-memorize samples"], "required_documents": ["lfss"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-037", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "P2OT 如何为深度不平衡聚类生成伪标签？",
+      "reference_answer": "P2OT 把伪标签生成写成渐进式部分最优传输，在先验分布约束下逐步把样本传输到不平衡簇，并优先从高置信样本学习。",
+      "answer_points": ["渐进式部分最优传输", "不平衡先验分布约束", "高置信样本"],
+      "gold": [{"doc": "ppot", "pages": [1]}], "gold_keywords": ["progressive partial optimal transport", "imbalanced clusters", "high-confident"],
+      "evidence": [{"doc": "ppot", "page": 1, "text": "Pseudo-label generation is formulated as progressive partial optimal transport, progressively transporting samples to imbalanced clusters under prior distribution constraints."}],
+      "acceptable_variants": ["P2OT", "progressive partial OT"], "required_documents": ["ppot"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-038", "language": "en", "task_type": "single_paper", "difficulty": "hard",
+      "question": "How is the P2OT formulation transformed into an efficiently solvable transport problem?",
+      "reference_answer": "The method introduces a virtual cluster and a weighted KL constraint, then transforms the progressive partial transport problem into an unbalanced optimal transport problem solved by a matrix-scaling algorithm.",
+      "answer_points": ["Introduce a virtual cluster", "Use a weighted KL constraint", "Transform to unbalanced OT", "Solve by matrix scaling"],
+      "gold": [{"doc": "ppot", "pages": [9]}], "gold_keywords": ["virtual cluster", "weighted KL", "unbalanced optimal transport", "scaling algorithm"],
+      "evidence": [{"doc": "ppot", "page": 9, "text": "We introduce a virtual cluster and a weighted KL constraint, transform the problem into unbalanced optimal transport, and solve it using a scaling algorithm."}],
+      "acceptable_variants": ["UOT", "matrix scaling"], "required_documents": ["ppot"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-039", "language": "zh", "task_type": "single_paper", "difficulty": "hard",
+      "question": "P2OT 在 ImgNet-R 数据集上相对此前最佳方法报告了哪些提升？",
+      "reference_answer": "论文报告 P2OT 在 ImgNet-R 上分别将 ACC、NMI 和 F1 提高 2.4、1.6 和 4.5 个点。",
+      "answer_points": ["ACC +2.4", "NMI +1.6", "F1 +4.5"],
+      "gold": [{"doc": "ppot", "pages": [6]}], "gold_keywords": ["2.4", "1.6", "4.5", "ImgNet-R"],
+      "evidence": [{"doc": "ppot", "page": 6, "text": "On the ImgNet-R datasets, our method reports improvements of 2.4 in ACC, 1.6 in NMI, and 4.5 in F1 score."}],
+      "acceptable_variants": ["ImageNet-R", "percentage-point improvements"], "required_documents": ["ppot"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-040", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "SSCN 如何同时实现实例级拉近与簇级推远？",
+      "reference_answer": "SSCN 先用无监督对比学习获得语义特征，再结合近邻挖掘与数据增强，把近邻作为正监督，并联合优化实例级和簇级损失。",
+      "answer_points": ["无监督对比语义特征", "近邻和增强提供正监督", "联合实例级与簇级损失"],
+      "gold": [{"doc": "ssc_clnm", "pages": [1, 7]}], "gold_keywords": ["instance-level pulling", "cluster-level pushing", "nearest neighbors"],
+      "evidence": [{"doc": "ssc_clnm", "page": 1, "text": "The framework performs instance-level pulling and cluster-level pushing cooperatively using contrastive learning and neighbor mining."}, {"doc": "ssc_clnm", "page": 7, "text": "Nearest-neighbor semantic features serve as positive instances, and instance- and cluster-level losses are jointly optimized."}],
+      "acceptable_variants": ["SSCN", "contrastive learning and neighbor mining"], "required_documents": ["ssc_clnm"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-041", "language": "en", "task_type": "single_paper", "difficulty": "medium",
+      "question": "How does SSCN turn nearest-neighbor information into supervision?",
+      "reference_answer": "It treats semantically meaningful nearest-neighbor features, together with augmentation information, as positive instances and jointly optimizes instance- and cluster-level objectives.",
+      "answer_points": ["Treat neighbors as positive instances", "Use augmentation information", "Optimize instance and cluster levels"],
+      "gold": [{"doc": "ssc_clnm", "pages": [7]}], "gold_keywords": ["nearest neighbor", "positive instances", "instance and cluster"],
+      "evidence": [{"doc": "ssc_clnm", "page": 7, "text": "Meaningful semantic nearest-neighbor features can serve as positive instances; the instance- and cluster-level losses are jointly optimized."}],
+      "acceptable_variants": ["neighbor mining", "positive supervision"], "required_documents": ["ssc_clnm"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-042", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "SSCN 的谱约束希望相似样本在嵌入空间满足什么关系？",
+      "reference_answer": "谱约束利用图亲和权重，使原空间中相似度高的样本在网络输出的嵌入空间中保持接近。",
+      "answer_points": ["使用图亲和或相似权重", "相似样本在嵌入中接近"],
+      "gold": [{"doc": "ssc_clnm", "pages": [10]}], "gold_keywords": ["spectral", "similar points", "close"],
+      "evidence": [{"doc": "ssc_clnm", "page": 10, "text": "The goal is to have similar points, those with large affinity values, mapped into an embedding space where they are close to each other."}],
+      "acceptable_variants": ["spectral constraint", "affinity-preserving embedding"], "required_documents": ["ssc_clnm"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-043", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "SADSE 用哪两类损失共同获得结构感知的谱嵌入？",
+      "reference_answer": "SADSE 联合使用谱嵌入损失和结构保持损失；后者通过注意力式自表达学习编码输入数据的子空间结构。",
+      "answer_points": ["谱嵌入损失", "结构保持损失", "注意力自表达编码结构"],
+      "gold": [{"doc": "sadse", "pages": [1, 4]}], "gold_keywords": ["spectral embedding loss", "structure preservation loss", "self-expression"],
+      "evidence": [{"doc": "sadse", "page": 1, "text": "We combine a spectral embedding loss and a structure preservation loss; the input subspace structure is encoded using attention-based self-expression learning."}],
+      "acceptable_variants": ["structure-aware spectral embedding", "self-expressive loss"], "required_documents": ["sadse"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-044", "language": "en", "task_type": "single_paper", "difficulty": "hard",
+      "question": "How does SADSE compute its batch-wise self-expressive coefficients?",
+      "reference_answer": "SADSE sends a query sample through Q_N and the other batch samples through K_N, then uses their inner-product attention scores as self-expressive coefficients before sparsifying them with nearest neighbors.",
+      "answer_points": ["Use Q_N for the query", "Use K_N for key samples", "Inner-product attention gives coefficients", "Nearest-neighbor sparsification"],
+      "gold": [{"doc": "sadse", "pages": [4]}], "gold_keywords": ["Q_N", "K_N", "attention score", "self-expressive coefficients"],
+      "evidence": [{"doc": "sadse", "page": 4, "text": "A batch-based self-expressive matrix is learned using Q_N and K_N; the attention score between their mapped samples gives the self-expressive coefficients."}],
+      "acceptable_variants": ["query/key networks", "attention-based self-expression"], "required_documents": ["sadse"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-045", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "SADSE 如何兼顾大规模训练与未见样本的谱表示？",
+      "reference_answer": "SADSE 以 batch 方式计算损失来扩展到大数据；训练后的网络还能为与训练分布相似的未见样本直接估计谱表示。",
+      "answer_points": ["batch-wise 损失提高可扩展性", "网络估计未见样本谱表示", "要求分布与训练数据相似"],
+      "gold": [{"doc": "sadse", "pages": [8]}], "gold_keywords": ["batch-wise", "unseen data points", "spectral representation"],
+      "evidence": [{"doc": "sadse", "page": 8, "text": "SADSE is made scalable by applying loss terms batch-wise, and the trained network can estimate spectral representations for unseen data from similar distributions."}],
+      "acceptable_variants": ["out-of-sample", "mini-batch scalability"], "required_documents": ["sadse"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-046", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "SCTP 方法为什么要引入类别锚点与类间拓扑？",
+      "reference_answer": "类别锚点用于表示低维空间中的类别位置，类间拓扑描述类别之间更细致的邻接关系，使相邻类别合理分离并保留类间语义结构。",
+      "answer_points": ["锚点表示类别位置", "类间拓扑描述类别邻接", "在可分性之外保留类间语义"],
+      "gold": [{"doc": "sctp", "pages": [1]}], "gold_keywords": ["category anchors", "inter-class topology", "neighbor classes"],
+      "evidence": [{"doc": "sctp", "page": 1, "text": "Category anchors indicate class locations in low-dimensional space, and inter-class topology reflects structural neighbor information so neighboring classes are rationally separable."}],
+      "acceptable_variants": ["class anchors", "inter-class relationships"], "required_documents": ["sctp"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-047", "language": "en", "task_type": "single_paper", "difficulty": "hard",
+      "question": "What does the inter-class relationship matrix represent in SCTP?",
+      "reference_answer": "Its entry R_ij measures the relationship or adjacency between classes i and j; it can be binary or continuous in [0,1], with larger values indicating stronger relationships.",
+      "answer_points": ["Represent class adjacency or relationship", "Binary or continuous entries", "Larger value means stronger relationship"],
+      "gold": [{"doc": "sctp", "pages": [3]}], "gold_keywords": ["inter-class relationship matrix", "adjacency", "[0,1]"],
+      "evidence": [{"doc": "sctp", "page": 3, "text": "R_ij measures the relationship between classes and represents inter-class topology; continuous values closer to 1 indicate a stronger relationship."}],
+      "acceptable_variants": ["R matrix", "class-neighbor matrix"], "required_documents": ["sctp"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-048", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "SCTP 如何通过类别锚点实现类内紧凑性？",
+      "reference_answer": "它用簇指示矩阵把每个样本以概率方式分配到类别锚点，并最小化样本嵌入与相应锚点的距离，从而形成紧凑的类内分布。",
+      "answer_points": ["簇指示矩阵连接样本与锚点", "概率分配", "最小化类内样本到锚点距离"],
+      "gold": [{"doc": "sctp", "pages": [5]}], "gold_keywords": ["cluster indicator matrix", "anchors", "intra-class distances"],
+      "evidence": [{"doc": "sctp", "page": 5, "text": "We use the cluster indicator matrix to link samples and anchors and obtain groups that minimize intra-class distances."}],
+      "acceptable_variants": ["intra-class compactness", "anchor assignment"], "required_documents": ["sctp"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-049", "language": "zh", "task_type": "single_paper", "difficulty": "hard",
+      "question": "多线性 SVD 谱聚类如何把一致超图划分转化为谱问题？",
+      "reference_answer": "论文先定义最大化一致超图平方关联度的划分准则，再放松正交指示矩阵约束，证明其解与对称亲和张量展开后的多线性 SVD 主奇异向量相关。",
+      "answer_points": ["一致超图平方关联度目标", "放松为正交矩阵", "与对称张量的多线性 SVD 相关"],
+      "gold": [{"doc": "mlsvd_sc", "pages": [1, 2]}], "gold_keywords": ["uniform hypergraphs", "multilinear SVD", "symmetric tensor"],
+      "evidence": [{"doc": "mlsvd_sc", "page": 1, "text": "A relaxation of the uniform-hypergraph partitioning problem is related to the multilinear SVD of symmetric tensors."}],
+      "acceptable_variants": ["tensor SVD", "hypergraph spectral partitioning"], "required_documents": ["mlsvd_sc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-050", "language": "en", "task_type": "single_paper", "difficulty": "hard",
+      "question": "What is the crude complexity of multilinear-SVD spectral clustering, and which approximations reduce it?",
+      "reference_answer": "The crude method costs O(n^(m+1)) because it computes the full tensor; column sampling and a tensor generalization of the Nystrom approximation reduce the work by evaluating sampled entries.",
+      "answer_points": ["State O(n^(m+1))", "Name column sampling", "Name Nystrom approximation", "Explain sampled tensor entries"],
+      "gold": [{"doc": "mlsvd_sc", "pages": [4]}], "gold_keywords": ["O(n", "column sampling", "Nystrom"],
+      "evidence": [{"doc": "mlsvd_sc", "page": 4, "text": "The crude complexity is O(n^(m+1)); column sampling and Nystrom approximation determine the eigenvectors from sampled tensor entries."}],
+      "acceptable_variants": ["linear-time SVD", "Nyström"], "required_documents": ["mlsvd_sc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-051", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "多线性 SVD 论文除提出超图谱算法外还给出了哪些理论与近似结果？",
+      "reference_answer": "论文给出了算法分数误差的理论界，并提出线性时间 SVD 与 Nystrom 近似来降低复杂度，随后在几何分组和运动分割上验证。",
+      "answer_points": ["分数误差理论界", "线性时间 SVD", "Nystrom 近似", "几何分组与运动分割验证"],
+      "gold": [{"doc": "mlsvd_sc", "pages": [6]}], "gold_keywords": ["fractional error", "linear-time SVD", "Nystrom"],
+      "evidence": [{"doc": "mlsvd_sc", "page": 6, "text": "We derived a theoretical bound for the fractional error and developed linear-time SVD and Nystrom approximation techniques."}],
+      "acceptable_variants": ["error bound", "approximate hypergraph clustering"], "required_documents": ["mlsvd_sc"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-052", "language": "zh", "task_type": "single_paper", "difficulty": "hard",
+      "question": "SeCu 为什么认为标准 mini-batch 交叉熵对一阶段深度聚类不稳定？",
+      "reference_answer": "聚类标签和中心会动态变化，而且当 batch 大小为 b、簇数为 K 时，至少 K-b 个簇在该 batch 中没有正样本，使标准交叉熵更新簇中心不稳定。",
+      "answer_points": ["标签与簇中心动态变化", "至少 K-b 个簇无正样本", "导致交叉熵中心更新不稳定"],
+      "gold": [{"doc": "scd", "pages": [3]}], "gold_keywords": ["K - b", "no positive instances", "unstable"],
+      "evidence": [{"doc": "scd", "page": 3, "text": "When sampling a mini-batch of b instances for K clusters, there are no positive instances for at least K-b clusters."}],
+      "acceptable_variants": ["missing positive clusters", "mini-batch instability"], "required_documents": ["scd"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-053", "language": "en", "task_type": "single_paper", "difficulty": "medium",
+      "question": "Which two mechanisms does SeCu use to make one-stage deep clustering stable and avoid collapse?",
+      "reference_answer": "SeCu introduces hardness-aware stable cluster discrimination for mini-batch optimization and a globally optimized entropy constraint on cluster assignments to prevent representation collapse.",
+      "answer_points": ["Hardness-aware stable cluster discrimination", "Global entropy constraint", "Avoid collapse"],
+      "gold": [{"doc": "scd", "pages": [2, 9]}], "gold_keywords": ["stable cluster discrimination", "global entropy", "collapse"],
+      "evidence": [{"doc": "scd", "page": 2, "text": "A stable cluster discrimination task yields a hardness-aware criterion, and a global entropy constraint is optimized efficiently."}],
+      "acceptable_variants": ["SeCu", "entropy regularization"], "required_documents": ["scd"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-054", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "SeCu 的全局熵约束主要防止什么退化现象？",
+      "reference_answer": "全局熵约束用于防止表示坍塌，即所有样本收敛到均匀或无区分度特征的平凡解。",
+      "answer_points": ["防止表示坍塌", "避免所有样本成为均匀特征的平凡解"],
+      "gold": [{"doc": "scd", "pages": [1, 9]}], "gold_keywords": ["global entropy", "collapsing", "uniform features"],
+      "evidence": [{"doc": "scd", "page": 9, "text": "To avoid collapsing in representations, a global entropy constraint with theoretical guarantee is investigated."}],
+      "acceptable_variants": ["representation collapse", "trivial uniform solution"], "required_documents": ["scd"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-055", "language": "zh", "task_type": "single_paper", "difficulty": "hard",
+      "question": "子图特征向量中心性如何用张量表示顶点与给定结构子图的关系？",
+      "reference_answer": "对给定结构 F，论文构造 F-子图张量，其条目统计由指定顶点集合形成且同构于 F 的子图数量，再以该张量的谱特征定义顶点中心性。",
+      "answer_points": ["给定结构 F", "张量条目统计同构子图数量", "通过张量谱特征定义中心性"],
+      "gold": [{"doc": "subgraph_ec", "pages": [1, 3]}], "gold_keywords": ["subgraph tensor", "isomorphic", "centrality"],
+      "evidence": [{"doc": "subgraph_ec", "page": 1, "text": "The relationship between vertices and subgraphs is represented using tensors, leading to an F-subgraph tensor and F-subgraph eigenvector centrality."}],
+      "acceptable_variants": ["F-subgraph tensor", "subgraph eigenvector centrality"], "required_documents": ["subgraph_ec"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-056", "language": "en", "task_type": "single_paper", "difficulty": "medium",
+      "question": "When does F-subgraph eigenvector centrality reduce to ordinary eigenvector centrality?",
+      "reference_answer": "When the selected subgraph F is the length-one path P1, equivalently the complete graph K2 representing an edge, the F-subgraph eigenvector centrality is exactly ordinary eigenvector centrality.",
+      "answer_points": ["F is P1", "Equivalently F is K2", "The measure equals ordinary eigenvector centrality"],
+      "gold": [{"doc": "subgraph_ec", "pages": [1]}], "gold_keywords": ["P1", "K2", "eigenvector centrality"],
+      "evidence": [{"doc": "subgraph_ec", "page": 1, "text": "When F is a path P1 of length 1 (or a complete graph K2), the F-eigenvector centrality is exactly eigenvector centrality."}],
+      "acceptable_variants": ["single edge", "ordinary EC"], "required_documents": ["subgraph_ec"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-057", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "为什么 (K2, K3)-子图中心性能够区分普通特征向量中心性无法区分的正则图顶点？",
+      "reference_answer": "普通特征向量中心性会给正则图顶点相同分数，而 (K2,K3)-子图中心性还考虑顶点参与三角形等给定子图的结构差异，因此能产生不同排序。",
+      "answer_points": ["正则图普通 EC 分数相同", "考虑 K3/三角形子图参与结构", "可区分顶点"],
+      "gold": [{"doc": "subgraph_ec", "pages": [1, 9]}], "gold_keywords": ["regular graph", "K2", "K3", "distinguish"],
+      "evidence": [{"doc": "subgraph_ec", "page": 9, "text": "In regular graphs, vertices have the same eigenvector centrality scores; the (K2,K3)-subgraph eigenvector centrality can distinguish vertices."}],
+      "acceptable_variants": ["triangle-aware centrality", "regular-graph discrimination"], "required_documents": ["subgraph_ec"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-058", "language": "zh", "task_type": "single_paper", "difficulty": "medium",
+      "question": "SpecNet2 相比 SpecNet1 在谱嵌入目标和网络结构上做了什么关键改变？",
+      "reference_answer": "SpecNet2 优化一个与特征问题等价的无约束目标，并移除了 SpecNet1 的正交化层，同时仍能恢复主特征向量。",
+      "answer_points": ["等价的无约束特征目标", "移除正交化层", "恢复主特征向量"],
+      "gold": [{"doc": "specnet2", "pages": [1]}], "gold_keywords": ["orthogonalization-free", "removes the orthogonalization layer", "eigenvectors"],
+      "evidence": [{"doc": "specnet2", "page": 1, "text": "SpecNet2 optimizes an equivalent objective of the eigen-problem and removes the orthogonalization layer in SpecNet1."}],
+      "acceptable_variants": ["orthogonalization-free objective", "无正交层"], "required_documents": ["specnet2"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-059", "language": "en", "task_type": "single_paper", "difficulty": "medium",
+      "question": "Which three mini-batch gradient evaluation schemes are introduced by SpecNet2?",
+      "reference_answer": "SpecNet2 introduces local, full, and neighbor gradient evaluation schemes.",
+      "answer_points": ["Local scheme", "Full scheme", "Neighbor scheme"],
+      "gold": [{"doc": "specnet2", "pages": [7, 15]}], "gold_keywords": ["local", "full", "neighbor"],
+      "evidence": [{"doc": "specnet2", "page": 15, "text": "Three mini-batch gradient evaluation schemes, namely local scheme, full scheme, and neighbor scheme, are proposed."}],
+      "acceptable_variants": ["local/full/neighbor evaluation"], "required_documents": ["specnet2"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "single-060", "language": "zh", "task_type": "single_paper", "difficulty": "hard",
+      "question": "SpecNet2-neighbor 在准确率和计算成本上相对 full 方案表现如何？",
+      "reference_answer": "SpecNet2-neighbor 的准确率几乎与 SpecNet1-full 和 SpecNet2-full 相同，但借助邻域跟踪技巧显著降低了计算成本。",
+      "answer_points": ["准确率几乎相同", "计算成本显著更低", "原因是 neighborhood tracking"],
+      "gold": [{"doc": "specnet2", "pages": [15]}], "gold_keywords": ["almost the same accuracy", "computational cost", "neighborhood tracking"],
+      "evidence": [{"doc": "specnet2", "page": 15, "text": "SpecNet2-neighbor achieves almost the same accuracy as the full schemes while its computational cost is significantly lower due to the neighborhood tracking trick."}],
+      "acceptable_variants": ["neighbor scheme", "邻域跟踪"], "required_documents": ["specnet2"], "scoring_mode": "any_evidence", "expect_insufficient_evidence": false, "unanswerable_reason": null,
+      "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-001", "language": "zh", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "BootSC 与 P2OT 都使用最优传输，但它们分别用 OT 监督什么对象？",
+      "reference_answer": "BootSC 用最优传输产生目标亲和矩阵和簇分配矩阵，以联合训练谱聚类；P2OT 则把伪标签生成写成渐进式部分最优传输，在不平衡先验约束下逐步选择高置信样本。",
+      "answer_points": ["BootSC 监督亲和矩阵和簇分配", "P2OT 生成不平衡感知伪标签", "区分端到端谱聚类与不平衡聚类目标"],
+      "gold": [{"doc": "bootsc", "pages": [1, 4]}, {"doc": "ppot", "pages": [1, 9]}], "gold_keywords": ["optimal transport", "affinity matrix", "pseudo-label"],
+      "evidence": [{"doc": "bootsc", "page": 1, "text": "BootSC uses optimal-transport-derived supervision to bootstrap the affinity matrix and cluster assignment matrix."}, {"doc": "ppot", "page": 1, "text": "P2OT formulates pseudo-label generation as progressive partial optimal transport under imbalanced prior constraints."}],
+      "acceptable_variants": ["OT", "P2OT", "最优传输"], "required_documents": ["bootsc", "ppot"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-002", "language": "zh", "task_type": "cross_paper_similarity", "difficulty": "hard",
+      "question": "TSC-Net、DTSC 与多线性 SVD 谱聚类在相似性建模上有什么共同点，又各自如何控制张量开销？",
+      "reference_answer": "三者都用高阶张量表达多元相似性。TSC-Net 以神经网络和随机批处理避免完整张量存储；DTSC 用 top-k 邻居采样并把其余条目置零；多线性 SVD 方法用列采样和 Nystrom 近似只计算抽样条目。",
+      "answer_points": ["共同使用高阶/多元相似性", "TSC-Net 随机批处理", "DTSC top-k 稀疏采样", "多线性 SVD 使用列采样/Nystrom"],
+      "gold": [{"doc": "dtscn", "pages": [1, 5]}, {"doc": "dtsc", "pages": [1, 6]}, {"doc": "mlsvd_sc", "pages": [1, 4]}], "gold_keywords": ["affinity tensor", "sampling", "Nystrom"],
+      "evidence": [{"doc": "dtscn", "page": 5, "text": "TSC-Net is trained stochastically to avoid storing the whole high-order affinity tensor."}, {"doc": "dtsc", "page": 6, "text": "DTSC keeps top-k-neighbor pairs and sets remaining tensor entries to zero."}, {"doc": "mlsvd_sc", "page": 4, "text": "Column sampling and Nystrom approximation use sampled tensor entries to reduce complexity."}],
+      "acceptable_variants": ["multi-wise similarity", "higher-order affinity"], "required_documents": ["dtscn", "dtsc", "mlsvd_sc"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-003", "language": "zh", "task_type": "cross_paper_similarity", "difficulty": "hard",
+      "question": "SENet 与 SADSE 的自表达网络为何都采用 query/key 映射，它们的用途有何差别？",
+      "reference_answer": "两者都用两个 MLP 式 query/key 映射计算样本间自表达关系。SENet 用可学习软阈值获得可泛化的自表达系数以做子空间聚类；SADSE 用注意力内积构造 batch 自表达矩阵，并把它作为结构保持约束加入谱嵌入。",
+      "answer_points": ["共同使用 query/key MLP", "SENet 面向可泛化自表达系数", "SADSE 面向 batch 结构保持谱嵌入"],
+      "gold": [{"doc": "senet", "pages": [4]}, {"doc": "sadse", "pages": [4]}], "gold_keywords": ["query", "key", "self-expressive"],
+      "evidence": [{"doc": "senet", "page": 4, "text": "SENet uses query and key MLPs followed by a learnable soft-threshold operator."}, {"doc": "sadse", "page": 4, "text": "SADSE learns a batch self-expressive matrix using Q_N and K_N attention scores."}],
+      "acceptable_variants": ["Q/K networks", "self-expression"], "required_documents": ["senet", "sadse"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-004", "language": "zh", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "稀疏 KAN、BootSC 与 SSCN 分别如何满足谱嵌入的结构或正交性要求？",
+      "reference_answer": "稀疏 KAN 对输出 Gram 矩阵做 Cholesky 正交化；BootSC 用最小语义不一致的 orthogonal Procrustes 重参数化；SSCN 用正交层配合谱约束，使高亲和样本在嵌入中靠近。",
+      "answer_points": ["KAN Cholesky 正交层", "BootSC orthogonal Procrustes", "SSCN 正交层与谱邻近约束"],
+      "gold": [{"doc": "kan", "pages": [3, 4]}, {"doc": "bootsc", "pages": [5]}, {"doc": "ssc_clnm", "pages": [1, 10]}], "gold_keywords": ["Cholesky", "Procrustes", "orthogonal"],
+      "evidence": [{"doc": "kan", "page": 3, "text": "The KAN orthogonal layer uses Cholesky decomposition of the Gram matrix."}, {"doc": "bootsc", "page": 5, "text": "BootSC uses orthogonal Procrustes to minimize semantic inconsistency."}, {"doc": "ssc_clnm", "page": 1, "text": "SSCN applies the spectral constraint through orthogonal layers."}],
+      "acceptable_variants": ["orthogonalization", "谱约束"], "required_documents": ["kan", "bootsc", "ssc_clnm"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-005", "language": "zh", "task_type": "cross_paper_similarity", "difficulty": "hard",
+      "question": "DSC-LSP 与 SpecNet2 如何共同利用邻域信息改进 mini-batch 谱学习？",
+      "reference_answer": "DSC-LSP 把随机样本的近邻直接加入 batch 以保留局部结构；SpecNet2 的 neighbor gradient scheme 跟踪每个点的邻域，只评估相关梯度条目，在接近 full 方案准确率的同时降低计算量。",
+      "answer_points": ["DSC-LSP 邻居增强 batch", "SpecNet2 邻域梯度跟踪", "都避免纯随机 batch 丢失邻域信息"],
+      "gold": [{"doc": "dsc_lsp", "pages": [6]}, {"doc": "specnet2", "pages": [7, 15]}], "gold_keywords": ["nearest neighbors", "neighbor scheme", "mini-batch"],
+      "evidence": [{"doc": "dsc_lsp", "page": 6, "text": "DSC-LSP adds nearest neighbors of selected points to every mini-batch."}, {"doc": "specnet2", "page": 15, "text": "The neighbor scheme uses neighborhood tracking for lower cost with almost full-scheme accuracy."}],
+      "acceptable_variants": ["neighbor augmentation", "neighbor gradient"], "required_documents": ["dsc_lsp", "specnet2"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-006", "language": "zh", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "AKNNG 与 DSC 都构造局部自适应相似图，但它们自适应的对象分别是什么？",
+      "reference_answer": "AKNNG 自适应每个数据点保留的近邻数量 k，通过剪除弱边获得不同稀疏度；DSC 固定 M 近邻结构，但用每个点到第 M 个近邻的距离作为局部尺度 sigma_i 来调节亲和权重。",
+      "answer_points": ["AKNNG 自适应近邻数量", "DSC 自适应局部尺度", "区分边数量与权重尺度"],
+      "gold": [{"doc": "aknn", "pages": [1]}, {"doc": "dsc", "pages": [3]}], "gold_keywords": ["different k", "local density", "sigma"],
+      "evidence": [{"doc": "aknn", "page": 1, "text": "AKNNG assigns a different k value to each data point by cutting weak connections."}, {"doc": "dsc", "page": 3, "text": "DSC defines sigma_i from the M-nearest-neighbor distance to reflect local density."}],
+      "acceptable_variants": ["adaptive neighborhood", "self-tuning affinity"], "required_documents": ["aknn", "dsc"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-007", "language": "zh", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "ClusMatch 与 P2OT 的伪标签策略如何分别处理置信度和类别不平衡？",
+      "reference_answer": "ClusMatch 用按类别自适应的正负阈值筛除低置信伪标签，并同时利用不可能类别；P2OT 在不平衡先验约束下渐进传输样本，只逐步吸收高置信样本并生成不平衡感知标签。",
+      "answer_points": ["ClusMatch 自适应正负阈值", "P2OT 渐进部分传输", "P2OT 显式使用不平衡先验"],
+      "gold": [{"doc": "clusmatch", "pages": [5, 6]}, {"doc": "ppot", "pages": [1]}], "gold_keywords": ["threshold", "progressive partial", "imbalanced"],
+      "evidence": [{"doc": "clusmatch", "page": 6, "text": "ClusMatch constructs adaptive positive and negative thresholds from the model's learning status."}, {"doc": "ppot", "page": 1, "text": "P2OT progressively transports samples to imbalanced clusters under prior distribution constraints."}],
+      "acceptable_variants": ["pseudo-label confidence", "imbalance-aware pseudo labels"], "required_documents": ["clusmatch", "ppot"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-008", "language": "zh", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "DTSC 指出的张量内存瓶颈在 TSC-Net 中是怎样被直接解决的？",
+      "reference_answer": "DTSC 仍需构造完整判别亲和张量，因而内存成本高且不能联合学习特征；TSC-Net 用神经网络近似谱嵌入并随机、分批构造局部张量，从而无需加载完整张量并可一阶段训练。",
+      "answer_points": ["DTSC 完整张量内存瓶颈", "TSC-Net 神经映射", "随机/分批张量计算", "一阶段联合训练"],
+      "gold": [{"doc": "dtsc", "pages": [10]}, {"doc": "dtscn", "pages": [1, 5]}], "gold_keywords": ["high memory cost", "stochastic", "one-stage"],
+      "evidence": [{"doc": "dtsc", "page": 10, "text": "DTSC must construct an affinity tensor and therefore has high memory cost."}, {"doc": "dtscn", "page": 5, "text": "TSC-Net trains stochastically and avoids storing the whole affinity tensor."}],
+      "acceptable_variants": ["batch-wise tensor", "deep tensor spectral clustering"], "required_documents": ["dtsc", "dtscn"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-009", "language": "zh", "task_type": "cross_paper_similarity", "difficulty": "hard",
+      "question": "DPAC、TSC-Net 与 SENet 分别通过什么机制避免对完整数据规模的直接依赖？",
+      "reference_answer": "DPAC 的概率聚合允许基于部分样本在线计算；TSC-Net 随机计算小部分亲和张量；SENet 用可泛化神经函数代替随样本数平方增长的固定自表达系数，并以 SGD 训练。",
+      "answer_points": ["DPAC 部分样本概率聚合", "TSC-Net 部分张量随机计算", "SENet 神经自表达与 SGD"],
+      "gold": [{"doc": "dpac", "pages": [14]}, {"doc": "dtscn", "pages": [4, 6]}, {"doc": "senet", "pages": [1, 8]}], "gold_keywords": ["part samples", "stochastic", "large-scale"],
+      "evidence": [{"doc": "dpac", "page": 14, "text": "Probability aggregation makes part-sample calculation possible."}, {"doc": "dtscn", "page": 6, "text": "TSC-Net calculates a small part of the affinity tensors at each time."}, {"doc": "senet", "page": 1, "text": "SENet avoids fixed quadratic self-expressive coefficients and handles large-scale datasets."}],
+      "acceptable_variants": ["online", "mini-batch", "stochastic scalability"], "required_documents": ["dpac", "dtscn", "senet"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-010", "language": "zh", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "DSC 与 BootSC 都联合谱嵌入和 k-means，它们在预训练与簇分配优化上有什么差异？",
+      "reference_answer": "DSC 先预训练自编码器，再用幂迭代谱模块和贪心 k-means 目标生成更适合聚类的嵌入；BootSC 不需要预训练网络，用最优传输同时 bootstrap 亲和矩阵和软簇分配，实现端到端联合训练。",
+      "answer_points": ["DSC 预训练自编码器", "DSC 贪心 k-means", "BootSC 无预训练", "BootSC OT 簇分配"],
+      "gold": [{"doc": "dsc", "pages": [1, 3, 4]}, {"doc": "bootsc", "pages": [1, 11]}], "gold_keywords": ["pretrain", "greedy Kmeans", "optimal transport"],
+      "evidence": [{"doc": "dsc", "page": 3, "text": "DSC first pretrains a deep autoencoder before learning spectral embeddings."}, {"doc": "bootsc", "page": 11, "text": "BootSC eliminates the need for pretrained networks and jointly refines affinity and cluster assignment matrices."}],
+      "acceptable_variants": ["end-to-end", "joint spectral clustering"], "required_documents": ["dsc", "bootsc"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-011", "language": "zh", "task_type": "cross_paper_similarity", "difficulty": "hard",
+      "question": "LFSS 与 SeCu 分别从哪个层面诊断并缓解深度聚类训练不稳定？",
+      "reference_answer": "LFSS 在样本层面用跨 epoch 表示余弦相似度发现易误聚类、难记忆的样本，并把稳定性作为监督；SeCu 在簇层面分析 mini-batch 缺少正簇样本导致的交叉熵不稳定，提出稳定簇判别和全局熵约束。",
+      "answer_points": ["LFSS 跨 epoch 样本稳定性", "LFSS 关注误聚类/记忆", "SeCu 缺少正簇样本", "SeCu 稳定判别与全局熵"],
+      "gold": [{"doc": "lfss", "pages": [2, 9]}, {"doc": "scd", "pages": [3, 9]}], "gold_keywords": ["sample stability", "no positive instances", "entropy"],
+      "evidence": [{"doc": "lfss", "page": 2, "text": "LFSS measures stability by representation cosine similarity across consecutive epochs."}, {"doc": "scd", "page": 3, "text": "SeCu identifies missing positive instances for at least K-b clusters in a mini-batch."}],
+      "acceptable_variants": ["training stability", "stable cluster discrimination"], "required_documents": ["lfss", "scd"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-012", "language": "zh", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "SCTP 与 SSCN 如何分别建模类间分离和类内聚合？",
+      "reference_answer": "SCTP 显式学习类别锚点和类间关系矩阵，同时把样本压向相应锚点；SSCN 则用簇级 pushing 拉开不同簇，并用近邻正样本在实例级 pulling，使同类或相似实例靠近。",
+      "answer_points": ["SCTP 类间关系矩阵", "SCTP 样本靠近锚点", "SSCN cluster-level pushing", "SSCN instance-level pulling"],
+      "gold": [{"doc": "sctp", "pages": [1, 3, 4]}, {"doc": "ssc_clnm", "pages": [1, 7]}], "gold_keywords": ["inter-class", "intra-class", "pulling", "pushing"],
+      "evidence": [{"doc": "sctp", "page": 1, "text": "SCTP preserves inter-class topology and assigns samples near anchors for intra-class compactness."}, {"doc": "ssc_clnm", "page": 1, "text": "SSCN performs instance-level pulling and cluster-level pushing cooperatively."}],
+      "acceptable_variants": ["class separation", "within-class compactness"], "required_documents": ["sctp", "ssc_clnm"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-013", "language": "zh", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "AKNNG 与动态谱聚类都使用稀疏图，它们稀疏化的目的和更新方式有何不同？",
+      "reference_answer": "AKNNG 面向静态样本相似图，通过为每个点剪除弱近邻连接来改善谱切割；动态谱聚类面向持续到达的图边，通过按端点度数采样并重采样维护保持簇结构的稀疏子图，以获得常数摊销更新。",
+      "answer_points": ["AKNNG 剪弱近邻边改善相似图", "动态方法维护 cluster-preserving sparsifier", "动态方法按度采样/重采样"],
+      "gold": [{"doc": "aknn", "pages": [1]}, {"doc": "dynamic_sc", "pages": [1, 2]}], "gold_keywords": ["weak connections", "cluster-preserving sparsifier", "resampled"],
+      "evidence": [{"doc": "aknn", "page": 1, "text": "AKNNG adapts k by cutting weak connections from each data point."}, {"doc": "dynamic_sc", "page": 2, "text": "The dynamic method samples edges by endpoint degree and resamples them after significant degree changes."}],
+      "acceptable_variants": ["sparse similarity graph", "dynamic sparsification"], "required_documents": ["aknn", "dynamic_sc"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-014", "language": "zh", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "多线性 SVD 方法与 TSC-Net 对多亲和张量的求解范式有何不同？",
+      "reference_answer": "多线性 SVD 方法把一致超图划分放松为对称亲和张量的谱/SVD 问题，并用采样近似降低复杂度；TSC-Net 用神经网络直接近似共识张量谱嵌入，以随机优化实现一阶段、多张量集成。",
+      "answer_points": ["多线性 SVD 的张量谱放松", "采样近似", "TSC-Net 神经近似嵌入", "一阶段随机优化"],
+      "gold": [{"doc": "mlsvd_sc", "pages": [1, 4]}, {"doc": "dtscn", "pages": [1, 4]}], "gold_keywords": ["multilinear SVD", "neural network", "stochastic"],
+      "evidence": [{"doc": "mlsvd_sc", "page": 1, "text": "The relaxed hypergraph partition is solved through multilinear SVD of a symmetric affinity tensor."}, {"doc": "dtscn", "page": 1, "text": "TSC-Net learns a consensus tensor spectral embedding with a neural network and stochastic optimization."}],
+      "acceptable_variants": ["spectral tensor decomposition", "deep tensor embedding"], "required_documents": ["mlsvd_sc", "dtscn"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-015", "language": "zh", "task_type": "cross_paper_similarity", "difficulty": "hard",
+      "question": "SADSE、SSCN 与 DSC-LSP 分别如何把局部结构加入深度谱嵌入？",
+      "reference_answer": "SADSE 用 batch 自表达矩阵和最近邻稀疏化构造结构保持损失；SSCN 把挖掘到的近邻作为正实例联合实例/簇损失；DSC-LSP 直接把随机样本的近邻加入 mini-batch。",
+      "answer_points": ["SADSE 自表达结构损失", "SSCN 近邻正监督", "DSC-LSP 近邻增强 batch"],
+      "gold": [{"doc": "sadse", "pages": [4]}, {"doc": "ssc_clnm", "pages": [7]}, {"doc": "dsc_lsp", "pages": [6]}], "gold_keywords": ["self-expressive", "nearest neighbors", "mini-batch"],
+      "evidence": [{"doc": "sadse", "page": 4, "text": "SADSE uses a batch self-expressive matrix and KNN sparsification to preserve input structure."}, {"doc": "ssc_clnm", "page": 7, "text": "SSCN treats nearest neighbors as positive instances."}, {"doc": "dsc_lsp", "page": 6, "text": "DSC-LSP adds nearest neighbors to each training batch."}],
+      "acceptable_variants": ["local structure", "neighbor-aware spectral learning"], "required_documents": ["sadse", "ssc_clnm", "dsc_lsp"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-016", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "How do the subgraph-centrality paper and multilinear-SVD clustering paper use tensors for different graph-analysis goals?",
+      "reference_answer": "The centrality paper builds an F-subgraph tensor whose entries count occurrences of a chosen subgraph and derives vertex rankings from its spectrum. The clustering paper builds a higher-order affinity tensor for a uniform hypergraph and uses multilinear SVD to partition vertices.",
+      "answer_points": ["Subgraph tensor counts motifs for centrality", "Affinity tensor represents multi-way similarity", "Multilinear SVD performs partitioning"],
+      "gold": [{"doc": "subgraph_ec", "pages": [1, 3]}, {"doc": "mlsvd_sc", "pages": [1, 2]}], "gold_keywords": ["subgraph tensor", "affinity tensor", "multilinear SVD"],
+      "evidence": [{"doc": "subgraph_ec", "page": 1, "text": "An F-subgraph tensor represents relationships between vertices and occurrences of F for centrality."}, {"doc": "mlsvd_sc", "page": 1, "text": "A symmetric affinity tensor and multilinear SVD are used for uniform-hypergraph partitioning."}],
+      "acceptable_variants": ["motif centrality", "hypergraph clustering"], "required_documents": ["subgraph_ec", "mlsvd_sc"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-017", "language": "en", "task_type": "cross_paper_similarity", "difficulty": "hard",
+      "question": "What common mechanism gives DSC-LSP, SENet, and SADSE out-of-sample capability?",
+      "reference_answer": "All three learn a neural mapping rather than storing only a finite-sample solution: DSC-LSP learns a spectral embedding map, SENet learns a self-expressive function, and SADSE learns a structure-aware spectral map. The trained functions can be evaluated on unseen samples.",
+      "answer_points": ["Common learned neural mapping", "DSC-LSP spectral map", "SENet self-expressive function", "SADSE structure-aware spectral map"],
+      "gold": [{"doc": "dsc_lsp", "pages": [12]}, {"doc": "senet", "pages": [1, 8]}, {"doc": "sadse", "pages": [8]}], "gold_keywords": ["unseen", "out-of-sample", "network"],
+      "evidence": [{"doc": "dsc_lsp", "page": 12, "text": "DSC-LSP extends a learned spectral mapping to unseen points."}, {"doc": "senet", "page": 8, "text": "SENet generalizes its learned self-expressive function to unseen samples."}, {"doc": "sadse", "page": 8, "text": "The trained SADSE network estimates spectral representations for unseen data."}],
+      "acceptable_variants": ["function approximation", "neural out-of-sample extension"], "required_documents": ["dsc_lsp", "senet", "sadse"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-018", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "Compare the training signals used by P2OT, ClusMatch, and LFSS when ground-truth labels are unavailable.",
+      "reference_answer": "P2OT generates imbalance-aware pseudo-labels through progressive partial optimal transport; ClusMatch combines selected high-confidence labels with adaptive positive and negative pseudo-labels; LFSS avoids class pseudo-label design as its main signal and instead supervises learning with representation stability across epochs at instance and cluster levels.",
+      "answer_points": ["P2OT transport pseudo-labels", "ClusMatch positive/negative thresholded pseudo-labels", "LFSS cross-epoch stability signals"],
+      "gold": [{"doc": "ppot", "pages": [1]}, {"doc": "clusmatch", "pages": [1, 5, 6]}, {"doc": "lfss", "pages": [2, 4]}], "gold_keywords": ["pseudo-label", "positive and negative", "sample stability"],
+      "evidence": [{"doc": "ppot", "page": 1, "text": "P2OT generates pseudo-labels through progressive partial optimal transport."}, {"doc": "clusmatch", "page": 1, "text": "ClusMatch uses unified positive and negative pseudo-label learning."}, {"doc": "lfss", "page": 4, "text": "LFSS uses sample-stability signals at instance and cluster levels with self-distillation."}],
+      "acceptable_variants": ["unsupervised supervision", "training signal"], "required_documents": ["ppot", "clusmatch", "lfss"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-019", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "Compare the orthogonality strategies of BootSC, sparse KAN, DSC-LSP, and SpecNet2.",
+      "reference_answer": "BootSC uses orthogonal Procrustes to minimize semantic change; sparse KAN applies a Cholesky-based output transform; DSC-LSP uses traditional spectral embeddings of core points as approximately orthogonal priors; SpecNet2 removes the orthogonalization layer by optimizing an equivalent unconstrained eigensolver objective.",
+      "answer_points": ["BootSC Procrustes", "KAN Cholesky", "DSC-LSP core-point priors", "SpecNet2 orthogonalization-free objective"],
+      "gold": [{"doc": "bootsc", "pages": [5]}, {"doc": "kan", "pages": [3]}, {"doc": "dsc_lsp", "pages": [7]}, {"doc": "specnet2", "pages": [1, 6]}], "gold_keywords": ["Procrustes", "Cholesky", "core points", "orthogonalization-free"],
+      "evidence": [{"doc": "bootsc", "page": 5, "text": "BootSC uses orthogonal Procrustes for semantically consistent orthogonalization."}, {"doc": "kan", "page": 3, "text": "Sparse KAN obtains its orthogonal transform from Cholesky decomposition of the Gram matrix."}, {"doc": "dsc_lsp", "page": 7, "text": "DSC-LSP uses orthogonal spectral embeddings of core points as training priors."}, {"doc": "specnet2", "page": 1, "text": "SpecNet2 removes the orthogonalization layer through an equivalent objective."}],
+      "acceptable_variants": ["orthogonality constraint", "orthogonal embedding"], "required_documents": ["bootsc", "kan", "dsc_lsp", "specnet2"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-020", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "What different structural objects are encoded by tensors in TSC-Net, DTSC, multilinear-SVD clustering, and subgraph eigenvector centrality?",
+      "reference_answer": "TSC-Net ensembles multiple affinity tensors for consensus spectral embedding; DTSC encodes anchor-based pair-to-pair similarities for HDLSS data; multilinear-SVD clustering represents multi-way affinities of a uniform hypergraph; subgraph centrality counts occurrences of a specified motif F to rank vertices.",
+      "answer_points": ["TSC-Net multiple affinity tensors", "DTSC pair-to-pair HDLSS tensor", "Multilinear-SVD uniform-hypergraph tensor", "F-subgraph occurrence tensor"],
+      "gold": [{"doc": "dtscn", "pages": [1]}, {"doc": "dtsc", "pages": [1]}, {"doc": "mlsvd_sc", "pages": [1]}, {"doc": "subgraph_ec", "pages": [1, 3]}], "gold_keywords": ["affinity tensor", "pair-to-pair", "hypergraph", "subgraph tensor"],
+      "evidence": [{"doc": "dtscn", "page": 1, "text": "TSC-Net ensembles multiple affinity tensors to learn a consensus tensor spectral embedding."}, {"doc": "dtsc", "page": 1, "text": "DTSC's tensor encodes anchor-based pair-to-pair similarities."}, {"doc": "mlsvd_sc", "page": 1, "text": "The method represents uniform-hypergraph higher-order affinities with a symmetric tensor."}, {"doc": "subgraph_ec", "page": 3, "text": "The F-subgraph tensor counts subgraphs isomorphic to F on specified vertices."}],
+      "acceptable_variants": ["higher-order structure", "multi-way relation"], "required_documents": ["dtscn", "dtsc", "mlsvd_sc", "subgraph_ec"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-021", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "How do ClusMatch, LFSS, P2OT, and SeCu create supervision without ground-truth labels?",
+      "reference_answer": "ClusMatch selects high-quality predictions and adds positive/negative pseudo-labels; LFSS uses cross-epoch representation stability at sample and cluster levels; P2OT creates imbalance-aware pseudo-labels by progressive partial transport; SeCu uses hardness-aware stable cluster discrimination plus a global entropy constraint.",
+      "answer_points": ["ClusMatch positive/negative pseudo-labels", "LFSS stability signal", "P2OT transport pseudo-labels", "SeCu stable discrimination and entropy"],
+      "gold": [{"doc": "clusmatch", "pages": [1, 5, 6]}, {"doc": "lfss", "pages": [2, 4]}, {"doc": "ppot", "pages": [1]}, {"doc": "scd", "pages": [1, 9]}], "gold_keywords": ["pseudo-label", "sample stability", "optimal transport", "cluster discrimination"],
+      "evidence": [{"doc": "clusmatch", "page": 1, "text": "ClusMatch uses selected labels and unified positive/negative pseudo-label learning."}, {"doc": "lfss", "page": 4, "text": "LFSS supervises training with sample stability at instance and cluster levels."}, {"doc": "ppot", "page": 1, "text": "P2OT generates imbalance-aware pseudo-labels through progressive partial transport."}, {"doc": "scd", "page": 9, "text": "SeCu combines stable cluster discrimination with a global entropy constraint."}],
+      "acceptable_variants": ["self-supervision", "unsupervised signal"], "required_documents": ["clusmatch", "lfss", "ppot", "scd"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-022", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "Compare how AKNNG, dynamic spectral clustering, DSC, and SSCN construct or exploit graph neighborhoods.",
+      "reference_answer": "AKNNG adapts the number of retained neighbors by pruning weak edges; dynamic spectral clustering maintains a degree-sampled cluster-preserving sparsifier under edge arrivals; DSC uses an M-neighbor distance as a local affinity scale; SSCN mines nearest neighbors as positive semantic supervision and as affinity information for spectral loss.",
+      "answer_points": ["AKNNG adaptive k", "Dynamic degree-sampled sparsifier", "DSC local M-neighbor scale", "SSCN neighbor positive supervision"],
+      "gold": [{"doc": "aknn", "pages": [1]}, {"doc": "dynamic_sc", "pages": [2]}, {"doc": "dsc", "pages": [3]}, {"doc": "ssc_clnm", "pages": [7, 10]}], "gold_keywords": ["nearest neighbors", "sparsifier", "local density", "positive instances"],
+      "evidence": [{"doc": "aknn", "page": 1, "text": "AKNNG assigns different k values by pruning weak graph connections."}, {"doc": "dynamic_sc", "page": 2, "text": "The dynamic method samples and resamples edges according to endpoint degrees."}, {"doc": "dsc", "page": 3, "text": "DSC's local scale is the M-nearest-neighbor distance."}, {"doc": "ssc_clnm", "page": 7, "text": "SSCN treats mined nearest neighbors as positive instances."}],
+      "acceptable_variants": ["neighborhood graph", "local affinity"], "required_documents": ["aknn", "dynamic_sc", "dsc", "ssc_clnm"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-023", "language": "en", "task_type": "cross_paper_similarity", "difficulty": "hard",
+      "question": "What scalability pattern is shared by DPAC, TSC-Net, SENet, and SADSE?",
+      "reference_answer": "All avoid a full-data optimization object at every update: DPAC aggregates probabilities on partial samples, TSC-Net computes only small tensor portions stochastically, SENet trains a reusable self-expressive function with SGD, and SADSE evaluates structure and spectral losses batch-wise.",
+      "answer_points": ["DPAC partial-sample aggregation", "TSC-Net partial tensor", "SENet reusable SGD-trained function", "SADSE batch-wise losses"],
+      "gold": [{"doc": "dpac", "pages": [14]}, {"doc": "dtscn", "pages": [6]}, {"doc": "senet", "pages": [8]}, {"doc": "sadse", "pages": [8]}], "gold_keywords": ["part samples", "stochastic", "SGD", "batch-wise"],
+      "evidence": [{"doc": "dpac", "page": 14, "text": "PAC makes part-sample calculation possible."}, {"doc": "dtscn", "page": 6, "text": "TSC-Net computes a small part of each affinity tensor at a time."}, {"doc": "senet", "page": 8, "text": "SENet uses SGD algorithms and generalizes to large-scale data."}, {"doc": "sadse", "page": 8, "text": "SADSE applies loss terms batch-wise for scalability."}],
+      "acceptable_variants": ["mini-batch scalability", "partial computation"], "required_documents": ["dpac", "dtscn", "senet", "sadse"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-024", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "How do SCTP, SADSE, SENet, and DSC-LSP preserve structure beyond ordinary pointwise feature learning?",
+      "reference_answer": "SCTP explicitly preserves class-neighbor topology and anchor compactness; SADSE matches spectral structure and a self-expressive input graph; SENet learns coefficients representing each point through other points; DSC-LSP injects local neighbors and representative core-point spectral priors into neural embedding training.",
+      "answer_points": ["SCTP class topology and anchors", "SADSE spectral plus self-expression structure", "SENet self-expression", "DSC-LSP neighbors and core priors"],
+      "gold": [{"doc": "sctp", "pages": [1, 4]}, {"doc": "sadse", "pages": [1, 4]}, {"doc": "senet", "pages": [1, 3]}, {"doc": "dsc_lsp", "pages": [6, 7]}], "gold_keywords": ["topology", "self-expressive", "core points", "anchors"],
+      "evidence": [{"doc": "sctp", "page": 1, "text": "SCTP preserves inter-class topology and assigns samples near class anchors."}, {"doc": "sadse", "page": 1, "text": "SADSE combines spectral embedding and structure-preservation losses."}, {"doc": "senet", "page": 1, "text": "SENet learns a neural self-expressive representation."}, {"doc": "dsc_lsp", "page": 7, "text": "DSC-LSP uses core-point spectral embeddings as structural priors."}],
+      "acceptable_variants": ["structural preservation", "relational representation"], "required_documents": ["sctp", "sadse", "senet", "dsc_lsp"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-025", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "How are spectral embeddings made discriminative in BootSC, DSC, sparse KAN, and SSCN?",
+      "reference_answer": "BootSC jointly bootstraps affinities and assignments and uses Procrustes orthogonality; DSC fuses a greedy k-means objective into embedding generation; sparse KAN combines adaptive affinity spectral loss with a Cholesky orthogonal layer; SSCN combines neighbor-driven instance pulling, cluster pushing, and an orthogonal spectral layer.",
+      "answer_points": ["BootSC OT plus Procrustes", "DSC greedy k-means objective", "KAN adaptive affinity plus Cholesky", "SSCN instance/cluster contrast plus orthogonal layer"],
+      "gold": [{"doc": "bootsc", "pages": [1, 5]}, {"doc": "dsc", "pages": [1, 4]}, {"doc": "kan", "pages": [3, 4]}, {"doc": "ssc_clnm", "pages": [1, 7]}], "gold_keywords": ["Procrustes", "greedy Kmeans", "Cholesky", "pulling"],
+      "evidence": [{"doc": "bootsc", "page": 5, "text": "BootSC uses semantically consistent Procrustes orthogonalization."}, {"doc": "dsc", "page": 4, "text": "DSC fuses the Kmeans objective into spectral-embedding generation."}, {"doc": "kan", "page": 3, "text": "Sparse KAN adds a Cholesky-based orthogonal output layer."}, {"doc": "ssc_clnm", "page": 1, "text": "SSCN combines instance pulling, cluster pushing, and an orthogonal spectral constraint."}],
+      "acceptable_variants": ["discriminative embedding", "deep spectral constraint"], "required_documents": ["bootsc", "dsc", "kan", "ssc_clnm"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-026", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "How do P2OT, ClusMatch, SeCu, and LFSS prevent unreliable samples or assignments from dominating training?",
+      "reference_answer": "P2OT progressively includes high-confidence samples under an imbalance-aware transport plan; ClusMatch filters pseudo-labels with adaptive positive/negative thresholds; SeCu uses a hardness-aware stable loss and global entropy; LFSS explicitly identifies unstable representations and uses stability signals to guide instance- and cluster-level learning.",
+      "answer_points": ["P2OT progressive high-confidence inclusion", "ClusMatch adaptive thresholds", "SeCu hardness and entropy", "LFSS stability-guided learning"],
+      "gold": [{"doc": "ppot", "pages": [1]}, {"doc": "clusmatch", "pages": [5, 6]}, {"doc": "scd", "pages": [1, 9]}, {"doc": "lfss", "pages": [2, 4]}], "gold_keywords": ["high-confident", "threshold", "hardness", "stability"],
+      "evidence": [{"doc": "ppot", "page": 1, "text": "P2OT progressively learns from high-confidence samples."}, {"doc": "clusmatch", "page": 6, "text": "Adaptive thresholds filter positive and negative pseudo-labels."}, {"doc": "scd", "page": 1, "text": "SeCu derives a hardness-aware stable clustering criterion."}, {"doc": "lfss", "page": 4, "text": "LFSS uses stability as a guiding signal."}],
+      "acceptable_variants": ["confidence control", "robust training signal"], "required_documents": ["ppot", "clusmatch", "scd", "lfss"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-027", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "Classify the main spectral-learning innovation of BootSC, sparse KAN, DSC, DSC-LSP, SSCN, and SpecNet2.",
+      "reference_answer": "BootSC jointly bootstraps affinities and assignments with OT; sparse KAN reduces parameters and learns an adaptive affinity under spectral constraints; DSC joins power-iteration embedding with greedy k-means; DSC-LSP adds neighbor batches and core-point priors; SSCN combines contrastive neighbor mining with spectral loss; SpecNet2 replaces explicit orthogonalization with an unconstrained eigensolver and neighbor gradients.",
+      "answer_points": ["BootSC OT bootstrap", "KAN sparse adaptive spectral constraint", "DSC power iteration plus greedy k-means", "DSC-LSP neighbors/core points", "SSCN contrastive neighbor mining", "SpecNet2 orthogonalization-free solver"],
+      "gold": [{"doc": "bootsc", "pages": [1]}, {"doc": "kan", "pages": [1, 4]}, {"doc": "dsc", "pages": [1]}, {"doc": "dsc_lsp", "pages": [6, 7]}, {"doc": "ssc_clnm", "pages": [1]}, {"doc": "specnet2", "pages": [1, 15]}], "gold_keywords": ["optimal transport", "sparse KAN", "power iteration", "core points", "neighbor mining", "orthogonalization-free"],
+      "evidence": [{"doc": "bootsc", "page": 1, "text": "BootSC uses OT supervision to bootstrap affinities and cluster assignments."}, {"doc": "kan", "page": 1, "text": "Sparse KAN reduces parameters and adds an adaptive affinity spectral constraint."}, {"doc": "dsc", "page": 1, "text": "DSC combines power-iteration spectral embedding and greedy Kmeans."}, {"doc": "dsc_lsp", "page": 7, "text": "DSC-LSP adds neighbor batches and core-point priors."}, {"doc": "ssc_clnm", "page": 1, "text": "SSCN fuses contrastive learning, neighbor mining, and spectral clustering."}, {"doc": "specnet2", "page": 1, "text": "SpecNet2 uses an orthogonalization-free equivalent objective."}],
+      "acceptable_variants": ["taxonomy", "spectral network innovations"], "required_documents": ["bootsc", "kan", "dsc", "dsc_lsp", "ssc_clnm", "specnet2"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-028", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "Compare the computational-scaling strategy of TSC-Net, DTSC, multilinear-SVD clustering, SENet, dynamic spectral clustering, and subgraph centrality.",
+      "reference_answer": "TSC-Net computes tensor pieces stochastically; DTSC sparsifies its tensor with top-k neighbor pairs; multilinear-SVD clustering samples tensor columns or uses Nystrom; SENet learns reusable coefficients with SGD instead of a full quadratic coefficient matrix; dynamic spectral clustering maintains a sampled sparsifier with O(1) amortized updates; the subgraph-centrality paper does not propose an analogous scaling mechanism and focuses on tensor-based global centrality definitions.",
+      "answer_points": ["TSC-Net stochastic tensor pieces", "DTSC top-k tensor sparsity", "Multilinear-SVD sampling/Nystrom", "SENet reusable SGD function", "Dynamic O(1) sparsifier updates", "Subgraph centrality lacks a stated matching scaling device"],
+      "gold": [{"doc": "dtscn", "pages": [6]}, {"doc": "dtsc", "pages": [6]}, {"doc": "mlsvd_sc", "pages": [4]}, {"doc": "senet", "pages": [1, 8]}, {"doc": "dynamic_sc", "pages": [1, 2]}, {"doc": "subgraph_ec", "pages": [1, 9]}], "gold_keywords": ["stochastic", "top k", "Nystrom", "SGD", "O(1)", "global"],
+      "evidence": [{"doc": "dtscn", "page": 6, "text": "TSC-Net computes only a small part of affinity tensors at each step."}, {"doc": "dtsc", "page": 6, "text": "DTSC retains top-k-neighbor pairs and zeros other tensor entries."}, {"doc": "mlsvd_sc", "page": 4, "text": "Column sampling and Nystrom reduce tensor computation."}, {"doc": "senet", "page": 8, "text": "SENet uses SGD and an out-of-sample function for large-scale data."}, {"doc": "dynamic_sc", "page": 1, "text": "The dynamic algorithm has O(1) amortized update time."}, {"doc": "subgraph_ec", "page": 9, "text": "The proposed tensor centrality measures are global."}],
+      "acceptable_variants": ["scalability comparison", "computational strategy"], "required_documents": ["dtscn", "dtsc", "mlsvd_sc", "senet", "dynamic_sc", "subgraph_ec"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-029", "language": "en", "task_type": "cross_paper_comparison", "difficulty": "hard",
+      "question": "Summarize the unsupervised training signal used by ClusMatch, LFSS, P2OT, SeCu, DPAC, and SSCN.",
+      "reference_answer": "ClusMatch uses selected predictions and positive/negative pseudo-labels; LFSS uses representation stability; P2OT uses imbalance-aware transport pseudo-labels; SeCu uses stable cluster discrimination and entropy; DPAC directly aggregates assignment probabilities without centers; SSCN uses contrastive augmentations and mined neighbors at instance and cluster levels.",
+      "answer_points": ["ClusMatch pseudo-labels", "LFSS stability", "P2OT transport", "SeCu discrimination/entropy", "DPAC probability aggregation", "SSCN contrastive neighbors"],
+      "gold": [{"doc": "clusmatch", "pages": [1]}, {"doc": "lfss", "pages": [4]}, {"doc": "ppot", "pages": [1]}, {"doc": "scd", "pages": [9]}, {"doc": "dpac", "pages": [1]}, {"doc": "ssc_clnm", "pages": [1, 7]}], "gold_keywords": ["pseudo-label", "stability", "transport", "entropy", "probability aggregation", "neighbor"],
+      "evidence": [{"doc": "clusmatch", "page": 1, "text": "ClusMatch uses positive and negative pseudo-labels."}, {"doc": "lfss", "page": 4, "text": "LFSS uses sample stability as supervision."}, {"doc": "ppot", "page": 1, "text": "P2OT uses progressive partial transport for pseudo-labels."}, {"doc": "scd", "page": 9, "text": "SeCu uses stable discrimination and global entropy."}, {"doc": "dpac", "page": 1, "text": "DPAC performs centerless probability aggregation."}, {"doc": "ssc_clnm", "page": 7, "text": "SSCN uses nearest neighbors as positive instances."}],
+      "acceptable_variants": ["self-supervised objective", "deep clustering signal"], "required_documents": ["clusmatch", "lfss", "ppot", "scd", "dpac", "ssc_clnm"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "cross-030", "language": "en", "task_type": "cross_paper_similarity", "difficulty": "hard",
+      "question": "How do AKNNG, DSC-LSP, SCTP, SADSE, and SpecNet2 preserve useful structure while reducing weaknesses of standard spectral clustering?",
+      "reference_answer": "AKNNG adapts graph neighborhoods; DSC-LSP injects local neighbors and global core-point priors; SCTP preserves class adjacency and anchor compactness; SADSE combines spectral and self-expressive structure losses; SpecNet2 tracks graph neighbors in an orthogonalization-free neural eigensolver. Each replaces a rigid global graph, batch, or orthogonalization assumption with structure-aware learning.",
+      "answer_points": ["AKNNG adaptive graph", "DSC-LSP local/global priors", "SCTP class topology", "SADSE self-expression structure", "SpecNet2 neighbor eigensolver"],
+      "gold": [{"doc": "aknn", "pages": [1]}, {"doc": "dsc_lsp", "pages": [6, 7]}, {"doc": "sctp", "pages": [1, 4]}, {"doc": "sadse", "pages": [1, 4]}, {"doc": "specnet2", "pages": [1, 15]}], "gold_keywords": ["adaptive", "core points", "inter-class topology", "self-expressive", "neighbor"],
+      "evidence": [{"doc": "aknn", "page": 1, "text": "AKNNG adapts neighborhood size for each point."}, {"doc": "dsc_lsp", "page": 7, "text": "DSC-LSP combines neighbor batches and core-point spectral priors."}, {"doc": "sctp", "page": 1, "text": "SCTP preserves inter-class topology and intra-class compactness."}, {"doc": "sadse", "page": 1, "text": "SADSE combines spectral and structure-preservation losses."}, {"doc": "specnet2", "page": 1, "text": "SpecNet2 uses neighbor tracking in an orthogonalization-free network."}],
+      "acceptable_variants": ["structure-aware spectral learning", "graph structure preservation"], "required_documents": ["aknn", "dsc_lsp", "sctp", "sadse", "specnet2"], "scoring_mode": "all_documents", "expect_insufficient_evidence": false, "unanswerable_reason": null, "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "no-answer-001", "language": "zh", "task_type": "insufficient_evidence", "difficulty": "medium",
+      "question": "这 20 篇论文分别报告了训练一次模型消耗多少千瓦时电量？",
+      "reference_answer": "证据不足：语料没有按论文报告训练能耗或千瓦时数据，无法给出对应数值。",
+      "answer_points": ["明确说明证据不足", "不得编造 kWh 数值", "指出语料未报告训练能耗"],
+      "gold": [], "gold_keywords": ["证据不足", "未报告"], "evidence": [], "acceptable_variants": ["无法从论文确定", "not reported"], "required_documents": [], "scoring_mode": "no_evidence", "expect_insufficient_evidence": true,
+      "unanswerable_reason": "全语料检索 kWh、energy consumption 和 power consumption 均无命中，论文未给出训练电量。", "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "no-answer-002", "language": "zh", "task_type": "insufficient_evidence", "difficulty": "medium",
+      "question": "这些聚类方法在随机对照临床试验中改善了多少患者生存率？",
+      "reference_answer": "证据不足：这批论文不是临床随机试验，也没有患者生存率结果。",
+      "answer_points": ["说明没有临床试验证据", "不得推断患者生存率"],
+      "gold": [], "gold_keywords": ["证据不足", "临床试验"], "evidence": [], "acceptable_variants": ["未进行患者试验", "not a clinical trial"], "required_documents": [], "scoring_mode": "no_evidence", "expect_insufficient_evidence": true,
+      "unanswerable_reason": "全语料检索 clinical trial、patient outcome 和 patient survival 均无命中。", "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "no-answer-003", "language": "zh", "task_type": "insufficient_evidence", "difficulty": "medium",
+      "question": "哪种方法训练产生的二氧化碳排放最低，具体是多少？",
+      "reference_answer": "证据不足：语料没有报告任何方法的碳排放或碳足迹，不能进行最低排放排序。",
+      "answer_points": ["明确无碳排放数据", "拒绝 unsupported 排序", "不得编造排放量"],
+      "gold": [], "gold_keywords": ["证据不足", "碳排放"], "evidence": [], "acceptable_variants": ["carbon footprint not reported", "无法比较"], "required_documents": [], "scoring_mode": "no_evidence", "expect_insufficient_evidence": true,
+      "unanswerable_reason": "全语料检索 carbon emission、carbon footprint 和 CO2 emission 均无命中。", "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "no-answer-004", "language": "zh", "task_type": "insufficient_evidence", "difficulty": "hard",
+      "question": "BootSC、SeCu 与 ClusMatch 在 ImageNet-21K 上的 ACC 分别是多少？",
+      "reference_answer": "证据不足：语料没有报告这三种方法在 ImageNet-21K 上的 ACC，不能把其他 ImageNet 子集或 ImageNet-Dogs 的结果代替。",
+      "answer_points": ["指出 ImageNet-21K 结果未报告", "不混淆 ImageNet-Dogs/ImageNet-1K", "不给出伪造 ACC"],
+      "gold": [], "gold_keywords": ["证据不足", "ImageNet-21K"], "evidence": [], "acceptable_variants": ["not evaluated on ImageNet-21K", "未报告"], "required_documents": [], "scoring_mode": "no_evidence", "expect_insufficient_evidence": true,
+      "unanswerable_reason": "全语料检索 ImageNet-21K 和 ImageNet21K 均无命中；现有 ImageNet 结果不能回答该特定数据集问题。", "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "no-answer-005", "language": "zh", "task_type": "insufficient_evidence", "difficulty": "medium",
+      "question": "这些谱聚类方法在量子计算机上相比 CPU 获得了多少加速？",
+      "reference_answer": "证据不足：语料没有量子计算实现或量子计算机加速实验。",
+      "answer_points": ["指出没有量子计算实验", "不得给出加速倍数"],
+      "gold": [], "gold_keywords": ["证据不足", "量子计算"], "evidence": [], "acceptable_variants": ["quantum acceleration not reported", "无法确定"], "required_documents": [], "scoring_mode": "no_evidence", "expect_insufficient_evidence": true,
+      "unanswerable_reason": "全语料检索 quantum computer 和 quantum computing 均无命中。", "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "no-answer-006", "language": "en", "task_type": "insufficient_evidence", "difficulty": "hard",
+      "question": "What are the seed-by-seed ACC results for ten random seeds for every method in the corpus?",
+      "reference_answer": "The corpus provides insufficient evidence: it does not report a complete ten-seed, seed-by-seed ACC table for every method.",
+      "answer_points": ["State insufficient evidence", "Do not turn aggregate statistics into per-seed values", "Identify the missing ten-seed table"],
+      "gold": [], "gold_keywords": ["insufficient evidence", "not reported"], "evidence": [], "acceptable_variants": ["seed-level values unavailable"], "required_documents": [], "scoring_mode": "no_evidence", "expect_insufficient_evidence": true,
+      "unanswerable_reason": "Corpus-wide searches for ten random seeds, 10 random seeds, and seed-by-seed found no such complete report.", "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "no-answer-007", "language": "en", "task_type": "insufficient_evidence", "difficulty": "medium",
+      "question": "How many watts of GPU power does each deep clustering method draw during training?",
+      "reference_answer": "The corpus does not report per-method GPU power draw in watts, so these values cannot be determined.",
+      "answer_points": ["State that watt measurements are absent", "Do not infer watts from runtime or hardware names"],
+      "gold": [], "gold_keywords": ["not reported", "watts"], "evidence": [], "acceptable_variants": ["insufficient evidence", "GPU power unavailable"], "required_documents": [], "scoring_mode": "no_evidence", "expect_insufficient_evidence": true,
+      "unanswerable_reason": "Corpus-wide searches for watts, watt-hour, and GPU power found no reported measurements.", "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "no-answer-008", "language": "en", "task_type": "insufficient_evidence", "difficulty": "medium",
+      "question": "Which method has the smallest clustering accuracy gap between demographic gender and racial groups?",
+      "reference_answer": "The corpus provides no demographic fairness evaluation by gender or racial group, so no accuracy-gap comparison is supported.",
+      "answer_points": ["State absence of demographic subgroup evaluation", "Refuse to rank methods", "Do not infer fairness from overall ACC"],
+      "gold": [], "gold_keywords": ["no demographic", "insufficient evidence"], "evidence": [], "acceptable_variants": ["fairness gap not evaluated"], "required_documents": [], "scoring_mode": "no_evidence", "expect_insufficient_evidence": true,
+      "unanswerable_reason": "Corpus-wide searches for demographic fairness, gender gap, and racial bias found no relevant evaluation.", "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "no-answer-009", "language": "en", "task_type": "insufficient_evidence", "difficulty": "medium",
+      "question": "How many communication rounds are required when these methods are trained with federated learning?",
+      "reference_answer": "Federated training and communication-round counts are not reported in this corpus.",
+      "answer_points": ["State that federated learning is absent", "Do not invent communication rounds"],
+      "gold": [], "gold_keywords": ["not reported", "federated learning"], "evidence": [], "acceptable_variants": ["insufficient evidence", "no communication-round result"], "required_documents": [], "scoring_mode": "no_evidence", "expect_insufficient_evidence": true,
+      "unanswerable_reason": "Corpus-wide searches for federated learning and communication rounds found zero matches.", "verification": {"status": "verified", "method": "pdf_page_review"}
+    },
+    {
+      "case_id": "no-answer-010", "language": "en", "task_type": "insufficient_evidence", "difficulty": "hard",
+      "question": "What is the measured inference latency of BootSC and SpecNet2 on a smartphone?",
+      "reference_answer": "The papers do not report smartphone inference-latency measurements for BootSC or SpecNet2. BootSC mentions edge-device efficiency only as future work, which is not a measured result.",
+      "answer_points": ["State no smartphone latency measurement", "Distinguish future edge-device work from evidence", "Do not fabricate milliseconds"],
+      "gold": [], "gold_keywords": ["not reported", "smartphone"], "evidence": [], "acceptable_variants": ["insufficient evidence", "mobile latency unavailable"], "required_documents": [], "scoring_mode": "no_evidence", "expect_insufficient_evidence": true,
+      "unanswerable_reason": "Corpus-wide searches for mobile phone, smartphone latency, and mobile latency found no measurements; the BootSC edge-device statement is prospective.", "verification": {"status": "verified", "method": "pdf_page_review"}
+    }
+  ]
+}
