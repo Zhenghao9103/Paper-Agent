@@ -83,7 +83,11 @@ def audit_release_tree(
         sorted(
             path for path in normalized
             if PurePosixPath(path).parts[0] not in ALLOWED_ROOTS
-            or (path.startswith("eval/") and not path.startswith("eval/router/") and path != "eval/__init__.py")
+            or (
+                path.startswith("eval/")
+                and not path.startswith(("eval/router/", "eval/rag/"))
+                and path != "eval/__init__.py"
+            )
         )
     )
     models = tuple(sorted(path for path in normalized if path.lower().endswith(".gguf")))
