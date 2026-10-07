@@ -3,7 +3,7 @@ from .chat import ChatMessage, ChatSession, TranscriptEvent
 from .chunk import DocumentChunk
 from .context_checkpoint import ContextCheckpoint
 from .document import Document
-from .memory import Memory
+from .memory import Memory, MemorySyncOperation
 from .page import DocumentPage
 from .parsing import (
     DocumentBlock,
@@ -29,6 +29,7 @@ __all__ = [
     "DocumentParseRun",
     "DocumentPage",
     "Memory",
+    "MemorySyncOperation",
     "PaperAnalysis",
     "SessionMemory",
     "TranscriptEvent",

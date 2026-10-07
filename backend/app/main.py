@@ -10,7 +10,7 @@ from .api.router import api_router
 from .core.config import get_settings
 from .core.paths import ensure_runtime_dirs
 from .db.base import Base
-from .db.session import SessionLocal, engine
+from .db.session import SessionLocal
 from .models import (
     AgentTrace,
     ChatMessage,
@@ -31,6 +31,7 @@ from .models import (
 )
 from .rag.bm25_store import ensure_bm25_schema
 from .services.document_jobs import enqueue_pending_and_legacy
+from .services.memory_harness import process_pending_writes, validate_memory_schema
 from .web import router as web_router
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -41,9 +42,13 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     ensure_runtime_dirs()
-    Base.metadata.create_all(bind=engine)
-    ensure_bm25_schema(engine)
     session_factory = getattr(app.state, "test_session_factory", None) or SessionLocal
+    with session_factory() as db:
+        bind = db.get_bind()
+        validate_memory_schema(bind)
+        Base.metadata.create_all(bind=bind)
+        ensure_bm25_schema(bind)
+        process_pending_writes(db)
     enqueue_pending_and_legacy(session_factory=session_factory)
     yield
 

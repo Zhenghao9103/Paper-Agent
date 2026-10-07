@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from ..core.config import get_settings
 from ..models.chat import ChatMessage, ChatSession, TranscriptEvent
-from ..models.memory import Memory
 from ..models.trace import AgentTrace
 from ..schemas.chat import Citation, WebSource
 from .context_checkpoint import (
@@ -21,9 +20,9 @@ from .memory import (
     MemoryHit,
     add_transcript_event,
     build_trace_events,
-    calculate_memory_importance,
-    upsert_memory_vector,
 )
+from .memory_extractor import has_explicit_memory_intent
+from .memory_harness import process_pending_writes, write_memories
 from .progress import ProgressCallback, emit_progress
 from .research import run_research
 
@@ -105,20 +104,38 @@ def answer_question(
         or 0
     )
     turn_id = f"session-{session.id}-turn-{user_turn_count + 1}"
+    memory_write_events: list[dict] = []
+
+    def write_checkpoint(outcome: CheckpointOutcome) -> None:
+        if outcome.status == "created":
+            # Commit the source before the memory path owns any transactions.
+            db.commit()
+            memory_write_events.extend(write_memories(
+                db, source_session_id=session.id, source_checkpoint_id=outcome.checkpoint_id,
+                previous_session_memory=outcome.previous_session_memory,
+                current_session_memory=outcome.current_session_memory,
+            ))
     emit_progress(progress_callback, "context")
     preflight = compact_session_context(
         db,
         session.id,
         settings=settings,
     )
-    if preflight.status == "created":
-        db.commit()
+    write_checkpoint(preflight)
     if preflight.status == "failed" and is_hard_overflow(preflight, settings):
         _record_context_error_and_raise(
             db,
             session_id=session.id,
             detail="上下文已超过模型窗口，且 LLM 压缩失败。",
         )
+    if has_explicit_memory_intent(question):
+        db.commit()
+        memory_write_events.extend(write_memories(
+            db, source_session_id=session.id, explicit_intent=question,
+        ))
+    elif preflight.status != "created":
+        # Retry durable work even when this turn does not trigger a new checkpoint.
+        memory_write_events.extend(process_pending_writes(db))
 
     def invoke_research() -> dict:
         result = run_research(
@@ -148,7 +165,7 @@ def answer_question(
                 session_id=session.id,
                 detail="上下文溢出恢复失败。",
             )
-        db.commit()
+        write_checkpoint(forced)
         overflow_retried = True
         try:
             result = invoke_research()
@@ -211,23 +228,8 @@ def answer_question(
         forced,
         postflight,
     )
-
-    if citations and len(question) > 12:
-        memory = Memory(
-            memory_type="research_topic",
-            content=f"User asked about: {question[:240]}",
-            source_type="chat",
-            source_id=session.id,
-            importance_score=calculate_memory_importance(question),
-            status="active",
-        )
-        db.add(memory)
-        db.flush()
-        try:
-            upsert_memory_vector(memory)
-            trace.append("update_long_term_vector_memory")
-        except Exception:
-            trace.append("long_term_memory_vector_upsert_failed")
+    write_checkpoint(postflight)
+    extra_trace_events.extend(memory_write_events)
 
     db.add(
         AgentTrace(

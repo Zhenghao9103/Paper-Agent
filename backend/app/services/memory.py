@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -6,6 +5,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..core.config import get_settings
 from ..models.chat import TranscriptEvent
 from ..models.memory import Memory
 from ..rag.vector_store import (
@@ -15,54 +15,13 @@ from ..rag.vector_store import (
     get_user_memories_collection,
 )
 from ..schemas.chat import Citation, WebSource
+from ..schemas.memory import MEMORY_TYPES
 
-PREFERENCE_MARKERS = (
-    "记住",
-    "以后",
-    "偏好",
-    "长期",
-    "always",
-    "remember",
-    "prefer",
-)
-DECISION_MARKERS = (
-    "决定",
-    "采用",
-    "选择",
-    "不要",
-    "必须",
-    "禁止",
-    "must",
-    "do not",
-)
 MEMORY_CANDIDATE_LIMIT = 20
 MIN_MEMORY_SEMANTIC_SCORE = 0.20
 MEMORY_RECENCY_HALF_LIFE_DAYS = 90.0
-SEMANTIC_WEIGHT = 0.65
-RECENCY_WEIGHT = 0.20
-IMPORTANCE_WEIGHT = 0.15
 ACTIVE_MEMORY_STATUS = "active"
-RETRIEVABLE_MEMORY_TYPES = ("research_topic",)
-
-
-def _contains_marker(text: str, marker: str) -> bool:
-    if not marker.isascii():
-        return marker in text
-    return re.search(
-        rf"(?<![A-Za-z0-9_]){re.escape(marker)}(?![A-Za-z0-9_])",
-        text,
-    ) is not None
-
-
-def calculate_memory_importance(text: str, *, is_pinned: bool = False) -> float:
-    if is_pinned:
-        return 1.0
-    lowered = text.casefold()
-    if any(_contains_marker(lowered, marker) for marker in PREFERENCE_MARKERS):
-        return 0.9
-    if any(_contains_marker(lowered, marker) for marker in DECISION_MARKERS):
-        return 0.75
-    return 0.5
+RETRIEVABLE_MEMORY_TYPES = (*MEMORY_TYPES, "research_topic")
 
 
 def _clamp_score(value: float) -> float:
@@ -82,12 +41,11 @@ def calculate_recency_score(
 def calculate_final_memory_score(
     semantic_score: float,
     recency_score: float,
-    importance_score: float,
 ) -> float:
+    settings = get_settings()
     return round(
-        SEMANTIC_WEIGHT * _clamp_score(semantic_score)
-        + RECENCY_WEIGHT * _clamp_score(recency_score)
-        + IMPORTANCE_WEIGHT * _clamp_score(importance_score),
+        settings.memory_semantic_weight * _clamp_score(semantic_score)
+        + settings.memory_recency_weight * _clamp_score(recency_score),
         4,
     )
 
@@ -101,21 +59,24 @@ class MemoryHit:
     score: float
 
 
-def upsert_memory_vector(memory: Memory) -> None:
+def upsert_memory_vector(memory: Memory, *, replace_metadata: bool = False) -> None:
     collection = get_user_memories_collection()
     metadata = {
         "memory_id": memory.id,
         "memory_type": memory.memory_type,
         "source_type": memory.source_type,
         "source_id": memory.source_id,
-        "importance_score": memory.importance_score,
         "status": memory.status,
     }
+    embedding = embed_text(memory.content, input_type="document")
+    if replace_metadata:
+        # Chroma upsert merges metadata; omission does not remove legacy fields.
+        collection.delete(ids=[str(memory.id)])
     collection.upsert(
         ids=[str(memory.id)],
         documents=[memory.content],
         metadatas=[{key: value for key, value in metadata.items() if value is not None}],
-        embeddings=[embed_text(memory.content, input_type="document")],
+        embeddings=[embedding],
     )
 
 
@@ -177,11 +138,9 @@ def query_relevant_memories(
     scored: list[tuple[MemoryHit, datetime]] = []
     for memory in memories:
         timestamp = memory.updated_at or memory.created_at or now or datetime.utcnow()
-        importance_score = 1.0 if memory.is_pinned else memory.importance_score
         final_score = calculate_final_memory_score(
             semantic_scores[memory.id],
             calculate_recency_score(timestamp, now=now),
-            importance_score,
         )
         scored.append(
             (
