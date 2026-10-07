@@ -115,6 +115,20 @@ $env:PAPER_AGENT_OPEN_BROWSER="0"
 
 上传 PDF 后会自动生成当前文档的 SQLite、BM25 和 Chroma 数据；仓库不提供也不需要预置 Chroma。文档状态只有在向量数量与内容校验完成后才会变为 `indexed`。
 
+## Memory V2 升级
+
+升级已有安装时，先停止后端，备份当前 SQLite 数据库和 Chroma 目录，然后在项目根目录执行：
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head
+```
+
+迁移会删除旧 Importance 列，并登记历史记忆的索引重建操作；新数据库仍自动建表。启动及后续写入会分批同步，每轮默认最多 20 个操作；同步中的记忆暂时不可召回，失败操作可在修复存储或模型配置后重试。
+
+同一个 Memory Extractor 负责提取和必要时的处理建议，Harness 校验目标并执行 ADD、UPDATE、MERGE、SUPERSEDE 或 IGNORE。明确的“记住”等指令在本轮研究前处理；普通有引用回答不再自动写入长期记忆。Memory 只用于上下文，不充当 Evidence 或引用。
+
+读取评分为 `0.8 × semantic + 0.2 × recency`，保留原 Top-K；confidence 和 pin 不参与排序。新增配置及默认值见 `backend/.env.example`：confidence 门槛 0.8、相关阈值 0.75、最多 5 条相关记忆。
+
 ## 主要能力
 
 - MinerU PDF 结构化解析、公式识别与图表理解

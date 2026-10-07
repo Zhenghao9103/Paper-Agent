@@ -12,6 +12,7 @@ from ..core.config import Settings, get_settings
 from ..models.chat import ChatMessage, ChatSession
 from ..models.context_checkpoint import ContextCheckpoint
 from ..models.session_memory import SessionMemory
+from ..schemas.memory import SessionMemorySnapshot, snapshot_session_memory
 from .llm import ContextSummaryError, complete_context_summary
 
 REFERENCE_MARKER_PATTERN = re.compile(
@@ -58,6 +59,8 @@ class CheckpointOutcome:
     tokens_before: int
     first_kept_message_id: int | None
     error: str | None = None
+    previous_session_memory: SessionMemorySnapshot | None = None
+    current_session_memory: SessionMemorySnapshot | None = None
 
     def as_payload(self) -> dict[str, int | str | None]:
         return {
@@ -468,7 +471,12 @@ def compact_session_context(
             str(exc),
         )
 
+    session_memory = db.get(SessionMemory, session_id)
+    previous_session_memory = snapshot_session_memory(session_memory)
+    current_session_memory = snapshot_session_memory(session_memory_sections)
     details = {
+        "previous_session_memory": previous_session_memory.model_dump(),
+        "current_session_memory": current_session_memory.model_dump(),
         "summarized_from_message_id": messages_to_summarize[0].id,
         "summarized_through_message_id": messages_to_summarize[-1].id,
         "document_refs": document_refs,
@@ -486,7 +494,6 @@ def compact_session_context(
     )
     db.add(new_checkpoint)
     db.flush()
-    session_memory = db.get(SessionMemory, session_id)
     if session_memory is None:
         session_memory = SessionMemory(
             session_id=session_id,
@@ -506,4 +513,6 @@ def compact_session_context(
         new_checkpoint.id,
         tokens_before,
         first_kept.id,
+        previous_session_memory=previous_session_memory,
+        current_session_memory=current_session_memory,
     )

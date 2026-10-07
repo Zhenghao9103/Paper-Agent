@@ -114,6 +114,12 @@ class Settings(BaseSettings):
     context_reserve_tokens: int = Field(default=16384, gt=0)
     context_keep_recent_tokens: int = Field(default=20000, gt=0)
     context_summary_max_tokens: int = Field(default=2048, gt=0)
+    memory_min_confidence: float = Field(default=0.8, ge=0, le=1)
+    memory_related_threshold: float = Field(default=0.75, ge=0, le=1)
+    memory_related_limit: int = Field(default=5, gt=0, le=20)
+    memory_sync_batch_size: int = Field(default=20, gt=0, le=100)
+    memory_semantic_weight: float = Field(default=0.8, ge=0, le=1)
+    memory_recency_weight: float = Field(default=0.2, ge=0, le=1)
     mineru_root: str = str(PROJECT_ROOT / ".mineru")
     mineru_formula_enabled: bool = True
     mineru_formula_timeout_seconds: float = Field(default=30.0, gt=0)
@@ -174,6 +180,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_context_token_budget(self) -> "Settings":
+        if abs(self.memory_semantic_weight + self.memory_recency_weight - 1.0) > 1e-9:
+            raise ValueError("Memory semantic and recency weights must sum to 1")
         if self.agent_total_timeout_seconds < self.agent_timeout_seconds:
             raise ValueError(
                 "agent_total_timeout_seconds must be greater than or equal to "
