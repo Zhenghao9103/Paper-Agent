@@ -66,7 +66,7 @@ configure_huggingface_cache()
 
 class Settings(BaseSettings):
     app_name: str = "PaperMind Agent API"
-    app_version: str = "0.1.0"
+    app_version: str = "2.2.0"
     database_url: str = "sqlite:///./data/papermind.db"
     storage_dir: str = "../storage"
     chroma_dir: str = "../chroma"
