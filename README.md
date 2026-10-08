@@ -1,4 +1,4 @@
-# Paper-Agent v2.1
+# Paper-Agent v2.2
 
 > **可选本地模型或 Jev 路由的 Evidence-driven Agentic RAG**
 
@@ -9,6 +9,7 @@ Paper-Agent 是一个面向学术 PDF 的本地优先研究助手。它把 PDF �
 | **可选意图 Router** | 默认使用随仓库发布的 Qwen3-1.7B Q4 本地模型，也可选择 Jev API |
 | **三路按需执行** | 在 `direct`、`simple_rag`、`agentic_rag` 之间选择，避免所有问题都启动复杂 Agent |
 | **Evidence-driven Agent Loop** | 围绕 claim 拆解、证据准入、覆盖状态和答案校验执行有边界的多轮研究 |
+| **Memory V2** | 候选提取、建议式 Judge、确定性 Harness 与可恢复的双存储同步 |
 | **本地知识库** | MinerU、SQLite、BM25、BGE-M3、ChromaDB 与 BGE-Reranker 组成完整 PDF 入库和检索链路 |
 
 ![Paper-Agent 学术论文智能体整体框架](frontend/public/readme/paper-agent-architecture.png)
@@ -32,6 +33,52 @@ Router 根据当前问题和有限会话上下文输出一个意图，不负责�
 这条链路并不是把全部控制权交给 LLM：模型负责 claim 拆解、语义判断和答案生成，代码负责工具白名单、Schema 校验、Evidence Pool 状态更新、token 预算、引用合法性、超时与失败降级。默认最多执行 3 轮研究和 5 次工具调用，并受 180 秒总时限约束。
 
 本发布版只包含运行代码和最终 Router 模型，不包含 `docs/`、`data/`、`reports/`、评估脚本、训练材料或预生成的 Chroma 数据库。
+
+## Memory V2：长期记忆
+
+![Paper-Agent Memory V2 整体架构](frontend/public/readme/memory-v2-architecture.png)
+
+Memory 保存用户偏好、研究兴趣、跨会话研究上下文和尚未完成的事项，对应 `user_preference`、`research_interest`、`research_context`、`open_loop` 四种类型。当前会话的 SessionMemory 与近期消息提供短期上下文，长期记忆则跨会话复用；论文事实及引用仍来自检索证据。
+
+### Write Memory
+
+Checkpoint 提交后，Memory Extractor 对比 old/new SessionMemory 的四字段快照：目标与约束、当前决定、待解问题、下一步行动，输出 `memory_type/content/confidence` 候选。图中“本轮新增对话”用于生成会话状态，不会直接传给长期提取接口；`confirmed_findings`、Evidence、工具输出及完整回答也不进入该接口。
+
+Memory Harness 先校验、规范化去重，再筛选同类型相关旧记忆。规则无法判断关系时，由同一个 Extractor 兼任 Judge，基于 Harness 提供的受限快照给出建议；数据库查询、目标复核及状态修改始终由 Harness 执行。相似度只用于筛选相关项，不直接证明重复或冲突。
+
+| 操作 | 处理方式 |
+| --- | --- |
+| ADD | 独立事项创建新记录 |
+| UPDATE | 同一事项被细化，保留 ID，使用候选内容 |
+| MERGE | 信息互补，保留目标 ID，使用经校验的合并稿 |
+| SUPERSEDE | 明确替代旧状态，旧记录 superseded，新记录 active |
+| IGNORE | 重复、低 confidence、不确定、无效建议或过期目标，不修改记忆 |
+
+“记住、以后、我的偏好是”等明确指令走同一个 Extractor/Harness，在本轮研究前尝试同步，让成功写入的偏好立即生效。普通有引用回答不再自动写入长期记忆；提取失败不撤销成功的 checkpoint。
+
+### Read Memory
+
+读取保持 `问题 embedding → Chroma 候选 → SQLite active 校验 → 排序 → Top-K → 上下文注入`。默认召回 20 条候选，过滤低于 0.20 的语义相似度，最终取 Top-3；兼容历史 `research_topic`，排除 pending/superseded 记录。
+
+`score = 0.8 × semantic + 0.2 × recency`，其中 `recency = 2 ^ (-age_days / 90)`，优先使用 SQLite 的 `updated_at`，缺失时回退到 `created_at`。Importance 已删除；confidence 只用于写入门槛，pin 仅作标记，均不参与排序。图中 metadata 时间戳为概念展示，实际新近度以 SQLite 时间戳为准。
+
+Memory 只作为 context，不能生成 Evidence ID 或 citation，也不作为论文事实依据。回答中的方法、实验数值和论文结论仍须由可验证的检索证据支撑。
+
+### 持久化同步与升级
+
+SQLite 是记忆真值来源，Chroma 用于向量检索。Harness 先在 SQLite 事务中登记持久化待同步操作（Durable Outbox），将受影响记录设为 `pending_sync` 并提交，再执行 Chroma 同步；所有向量操作成功后，才在 SQLite 事务中更新内容与最终状态。UPDATE/MERGE 重新 embedding，SUPERSEDE 同步旧、新记录。
+
+失败或中断保留 pending，允许暂时不可召回；启动和后续写入时在单后端进程内串行、有限、幂等重放。IGNORE、重试和单纯状态切换不刷新记忆时间戳，只有实际内容更新才刷新 `updated_at`。
+
+默认 confidence 门槛 0.8，相关旧记忆阈值 0.75、最多 5 条，每轮同步最多 20 个操作；阈值和评分权重集中配置于 Settings，示例见 `backend/.env.example`。
+
+升级已有安装时，先停止后端，备份当前 SQLite 数据库和 Chroma 目录，再在项目根目录执行：
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head
+```
+
+迁移删除旧 Importance 列、创建待同步操作表，并为历史记忆登记 REINDEX，以清除旧向量 metadata；保留内容、类型、pin、最终状态和原时间戳。历史记录在自身重建完成前暂时不可召回。`create_all` 只负责新库建表，不能替代旧库迁移。已有 `.env` 如显式设置了 `APP_VERSION`，请同步改为 `2.2.0`。
 
 ## 系统要求
 
@@ -114,20 +161,6 @@ $env:PAPER_AGENT_OPEN_BROWSER="0"
 ```
 
 上传 PDF 后会自动生成当前文档的 SQLite、BM25 和 Chroma 数据；仓库不提供也不需要预置 Chroma。文档状态只有在向量数量与内容校验完成后才会变为 `indexed`。
-
-## Memory V2 升级
-
-升级已有安装时，先停止后端，备份当前 SQLite 数据库和 Chroma 目录，然后在项目根目录执行：
-
-```powershell
-.\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head
-```
-
-迁移会删除旧 Importance 列，并登记历史记忆的索引重建操作；新数据库仍自动建表。启动及后续写入会分批同步，每轮默认最多 20 个操作；同步中的记忆暂时不可召回，失败操作可在修复存储或模型配置后重试。
-
-同一个 Memory Extractor 负责提取和必要时的处理建议，Harness 校验目标并执行 ADD、UPDATE、MERGE、SUPERSEDE 或 IGNORE。明确的“记住”等指令在本轮研究前处理；普通有引用回答不再自动写入长期记忆。Memory 只用于上下文，不充当 Evidence 或引用。
-
-读取评分为 `0.8 × semantic + 0.2 × recency`，保留原 Top-K；confidence 和 pin 不参与排序。新增配置及默认值见 `backend/.env.example`：confidence 门槛 0.8、相关阈值 0.75、最多 5 条相关记忆。
 
 ## 主要能力
 
