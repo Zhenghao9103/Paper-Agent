@@ -65,6 +65,10 @@ configure_huggingface_cache()
 
 
 class Settings(BaseSettings):
+    sandbox_enabled: bool = False
+    sandbox_python_executable: str | None = None
+    sandbox_timeout_seconds: float = Field(default=45.0, ge=10, le=120)
+    sandbox_artifact_store: str | None = None
     app_name: str = "PaperMind Agent API"
     app_version: str = "2.2.0"
     database_url: str = "sqlite:///./data/papermind.db"

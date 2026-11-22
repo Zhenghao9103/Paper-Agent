@@ -1,6 +1,8 @@
 # Python
 __pycache__/
 backend/tests/
+/sandbox_runtime/tests/
+/sandbox_runtime/build/
 frontend/src/**/*.test.*
 frontend/src/**/*.spec.*
 *.py[cod]

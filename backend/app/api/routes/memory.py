@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from ...db.session import get_db
 from ...models.chat import TranscriptEvent
 from ...models.memory import Memory
+from ...schemas.compute import SANDBOX_EXECUTION_EVENT
 from ...schemas.memory import MemoryRead
 from ...schemas.transcript import TranscriptEventRead
 
@@ -23,7 +24,10 @@ def list_session_transcripts(
 ) -> list[TranscriptEvent]:
     statement = (
         select(TranscriptEvent)
-        .where(TranscriptEvent.session_id == session_id)
+        .where(
+            TranscriptEvent.session_id == session_id,
+            TranscriptEvent.event_type != SANDBOX_EXECUTION_EVENT,
+        )
         .order_by(TranscriptEvent.created_at)
     )
     return list(db.scalars(statement).all())

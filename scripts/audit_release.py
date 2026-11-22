@@ -28,6 +28,17 @@ ALLOWED_ROOTS = {
     "scripts",
     "setup.ps1",
 }
+SANDBOX_RELEASE_PATH = re.compile(
+    r"sandbox_runtime/(?:README\.md|MANIFEST\.in|pyproject\.toml|"
+    r"src/sandbox_runtime/(?:[a-z_]+/)*[a-z_]+\.py|"
+    r"images/python/(?:Dockerfile|runner\.py|keeper\.py|collect\.py)|"
+    r"examples/(?:create_chart|execute_mean|mcp_client)\.py)"
+)
+OPENSPEC_RELEASE_PATH = re.compile(
+    r"openspec/(?:config\.yaml|specs/[a-z0-9-]+/spec\.md|"
+    r"changes/archive/\d{4}-\d{2}-\d{2}-[a-z0-9-]+/"
+    r"(?:\.openspec\.yaml|proposal\.md|design\.md|tasks\.md|specs/[a-z0-9-]+/spec\.md))"
+)
 FORBIDDEN_COMPONENTS = {
     ".cache",
     ".hf-cache",
@@ -82,7 +93,11 @@ def audit_release_tree(
     unexpected_roots = tuple(
         sorted(
             path for path in normalized
-            if PurePosixPath(path).parts[0] not in ALLOWED_ROOTS
+            if (
+                PurePosixPath(path).parts[0] not in ALLOWED_ROOTS
+                and not SANDBOX_RELEASE_PATH.fullmatch(path)
+                and not OPENSPEC_RELEASE_PATH.fullmatch(path)
+            )
             or (
                 path.startswith("eval/")
                 and not path.startswith(("eval/router/", "eval/rag/"))

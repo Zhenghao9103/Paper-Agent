@@ -1,0 +1,2 @@
+# Optional MCP client only. Install the Docker runtime in its separate environment.
+mcp==2.3.0

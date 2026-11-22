@@ -162,6 +162,32 @@ $env:PAPER_AGENT_OPEN_BROWSER="0"
 
 上传 PDF 后会自动生成当前文档的 SQLite、BM25 和 Chroma 数据；仓库不提供也不需要预置 Chroma。文档状态只有在向量数量与内容校验完成后才会变为 `indexed`。
 
+## 可选 Sandbox 计算
+
+聊天页默认使用 Research。显式选择 Compute 后，可以在本地 Docker 隔离环境中运行
+Python，查看计算输出和下载图表。如需使用 Compute，请额外准备 Sandbox。
+
+完成标准安装后，准备 Docker Desktop 的 Linux 容器引擎，在项目根目录运行：
+
+```powershell
+& .\.venv\Scripts\python.exe -m pip install -r backend/requirements-sandbox.txt
+& .\.venv\Scripts\python.exe -m venv .tools/sandbox-venv
+& .\.tools\sandbox-venv\Scripts\python.exe -m pip install './sandbox_runtime[mcp]'
+docker build -t paper-agent-sandbox:0.1.0 sandbox_runtime/images/python
+```
+
+在启动 Paper-Agent 的 PowerShell 中设置以下变量，也可把对应设置写入本机
+`backend/.env`。计算代码由已配置的 Agent 模型生成。
+
+```powershell
+$env:SANDBOX_ENABLED = 'true'
+$env:SANDBOX_PYTHON_EXECUTABLE = (Resolve-Path '.tools/sandbox-venv/Scripts/python.exe').Path
+```
+
+重启后，在聊天页选择 Compute，发送“计算 [1, 2, 3, 4] 的均值并画折线图”。
+预期输出为 `2.5`，对话中可以查看和下载 PNG。要停用，设回
+`SANDBOX_ENABLED=false` 后重启。详见 [Sandbox Runtime](sandbox_runtime/README.md)。
+
 ## 主要能力
 
 - MinerU PDF 结构化解析、公式识别与图表理解
