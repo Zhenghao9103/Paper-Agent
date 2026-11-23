@@ -91,7 +91,15 @@ def answer_question(
     session_id: int | None,
     forced_intent: str | None = None,
     progress_callback: ProgressCallback | None = None,
+    mode: str = "research",
 ) -> tuple[int, str, list[Citation], list[WebSource], list[str], list[MemoryHit], list[dict]]:
+    if mode == "compute":
+        from .compute import answer_compute
+
+        return answer_compute(db, question=question, document_id=document_id,
+                              session_id=session_id, progress_callback=progress_callback)
+    if mode != "research":
+        raise ValueError("invalid_chat_mode")
     settings = get_settings()
     session = get_or_create_session(db, session_id, question[:80] or "Research Chat")
     user_turn_count = int(

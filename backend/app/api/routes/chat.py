@@ -2,17 +2,50 @@ import asyncio
 import json
 from collections.abc import AsyncIterator, Callable
 from typing import Any
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
 from ...db.session import SessionLocal, get_db
-from ...schemas.chat import ChatRequest, ChatResponse
+from ...schemas.chat import ChatRequest, ChatResponse, ComputeChatResponse
+from ...schemas.compute import execution_payloads
 from ...services.chat import answer_question
 from ...services.context_checkpoint import ContextCompactionUnavailable
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+@router.get("/sessions/{session_id}/artifacts/{artifact_id}")
+def read_compute_artifact(session_id: int, artifact_id: str,
+                          db: Session = Depends(get_db)) -> Response:
+    from ...core.config import get_settings
+    from ...integrations.sandbox_mcp import SandboxMCPAdapter, SandboxUnavailable
+    from ...services.compute import artifact_for_session
+
+    settings = get_settings()
+    if not settings.sandbox_enabled:
+        raise HTTPException(status_code=503, detail="计算工具未启用。")
+    expected = artifact_for_session(db, session_id, artifact_id)
+    if expected is None:
+        raise HTTPException(status_code=404, detail="文件不存在或不属于该会话。")
+    try:
+        info, content = SandboxMCPAdapter(settings).read_artifact(artifact_id)
+        if (info.mime_type != expected["mime_type"] or info.size_bytes != expected["size_bytes"]
+                or info.filename != expected["filename"]):
+            raise SandboxUnavailable("artifact_metadata_mismatch")
+    except SandboxUnavailable:
+        raise HTTPException(status_code=404, detail="文件不可用或已过期。") from None
+
+    disposition = "inline" if info.mime_type == "image/png" else "attachment"
+    return Response(content=content, media_type=info.mime_type, headers={
+        "Content-Disposition": f"{disposition}; filename*=UTF-8''{quote(info.filename, safe='')}",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-store",
+        "Content-Security-Policy": "default-src 'none'; sandbox",
+    })
 
 
 def _run_question(request: ChatRequest, db: Session):
@@ -22,17 +55,18 @@ def _run_question(request: ChatRequest, db: Session):
             question=request.question,
             document_id=request.document_id,
             session_id=request.session_id,
+            mode=request.mode,
         )
     except ContextCompactionUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
-@router.post("/ask", response_model=ChatResponse)
+@router.post("/ask", response_model=ComputeChatResponse | ChatResponse)
 def ask_question(request: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
     session_id, answer, citations, web_sources, trace, memory_hits, trace_events = (
         _run_question(request, db)
     )
-    return ChatResponse(
+    response = ChatResponse(
         session_id=session_id,
         answer=answer,
         citations=citations,
@@ -41,6 +75,11 @@ def ask_question(request: ChatRequest, db: Session = Depends(get_db)) -> ChatRes
         memory_hits=memory_hits,
         trace_events=trace_events,
     )
+    if request.mode == "compute":
+        return ComputeChatResponse(
+            **response.model_dump(), executions=execution_payloads(trace_events)
+        )
+    return response
 
 
 def _sse(event: str, payload: dict[str, Any]) -> dict[str, str]:
@@ -86,6 +125,7 @@ async def _stream_events(
                 question=request.question,
                 document_id=request.document_id,
                 session_id=request.session_id,
+                mode=request.mode,
                 progress_callback=lambda event: publish("status", event),
             )
             publish("result", result)
@@ -151,15 +191,17 @@ async def _stream_events(
                 "session",
                 {"type": "session", "session_id": session_id},
             )
-            yield _sse(
-                "final",
-                {
-                    "type": "final_answer",
-                    "session_id": session_id,
-                    "answer": answer,
-                    "citation_chunk_ids": citation_chunk_ids,
-                },
-            )
+            final = {
+                "type": "final_answer",
+                "session_id": session_id,
+                "answer": answer,
+                "citation_chunk_ids": citation_chunk_ids,
+            }
+            if request.mode == "compute":
+                final["executions"] = [
+                    result.model_dump() for result in execution_payloads(payload[6])
+                ]
+            yield _sse("final", final)
             break
     finally:
         await asyncio.shield(worker_task)

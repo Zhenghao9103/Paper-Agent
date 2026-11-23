@@ -11,6 +11,9 @@ class ProgressEvent(TypedDict):
 ProgressCallback = Callable[[ProgressEvent], None]
 
 _MESSAGES = {
+    "compute_generation": "正在生成计算代码",
+    "sandbox_running": "正在隔离环境中计算",
+    "sandbox_result": "已收到计算执行结果",
     "context": "正在读取会话上下文",
     "routing": "正在判断问题类型",
     "planning": "正在规划检索",

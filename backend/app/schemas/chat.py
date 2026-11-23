@@ -1,4 +1,8 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
+
+from .compute import SandboxExecution
 
 
 class Citation(BaseModel):
@@ -24,6 +28,7 @@ class ChatRequest(BaseModel):
     question: str
     document_id: int | None = None
     session_id: int | None = None
+    mode: Literal["research", "compute"] = "research"
 
 
 class MemoryHitRead(BaseModel):
@@ -52,3 +57,7 @@ class ChatResponse(BaseModel):
     trace: list[str] = []
     memory_hits: list[MemoryHitRead] = []
     trace_events: list[dict] = []
+
+
+class ComputeChatResponse(ChatResponse):
+    executions: list[SandboxExecution] = Field(default_factory=list)

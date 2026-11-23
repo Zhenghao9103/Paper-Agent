@@ -628,6 +628,12 @@ def index() -> str:
               <div class="chat-messages" id="chat-messages">
                 <p class="chat-empty">可以像聊天一样连续追问论文内容，例如：这篇论文的创新点是什么？方法和已有方法相比有什么区别？实验结论可靠吗？</p>
               </div>
+              <label for="chat-mode">模式
+                <select id="chat-mode">
+                  <option value="research" selected>Research</option>
+                  <option value="compute">Compute</option>
+                </select>
+              </label>
               <form class="chat-composer" id="chat-form">
                 <textarea id="question-input" placeholder="输入你的问题，按 Ctrl + Enter 发送"></textarea>
                 <button id="ask-button" type="submit">发送</button>
@@ -672,6 +678,7 @@ def index() -> str:
       const questionInput = document.getElementById("question-input");
       const chatForm = document.getElementById("chat-form");
       const askButton = document.getElementById("ask-button");
+      const chatMode = document.getElementById("chat-mode");
       const arxivForm = document.getElementById("arxiv-form");
       const arxivInput = document.getElementById("arxiv-input");
       const arxivButton = document.getElementById("arxiv-button");
@@ -1167,6 +1174,31 @@ def index() -> str:
         bubble.append(errorText, document.createElement("br"), retry);
       }
 
+      function renderComputeArtifacts(bubble, streamEvent) {
+        for (const execution of streamEvent.executions || []) {
+          if (execution.status !== "success") continue;
+          for (const artifact of execution.artifacts || []) {
+            if (!/^[a-f0-9]{32}$/.test(artifact.artifact_id)) continue;
+            const url = `/api/chat/sessions/${Number(streamEvent.session_id)}/artifacts/${artifact.artifact_id}`;
+            const block = document.createElement("div");
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = String(artifact.filename || "artifact");
+            link.textContent = `下载 ${artifact.filename}`;
+            if (artifact.mime_type === "image/png") {
+              const preview = document.createElement("img");
+              preview.src = url;
+              preview.alt = String(artifact.filename || "计算图表");
+              preview.style.maxWidth = "100%";
+              preview.loading = "lazy";
+              block.append(preview, document.createElement("br"));
+            }
+            block.append(link);
+            bubble.append(block);
+          }
+        }
+      }
+
       async function submitChatQuestion(question, pendingMessage = null, appendUser = true) {
         if (activeChatRequest) return;
         activeChatRequest = true;
@@ -1174,15 +1206,20 @@ def index() -> str:
         if (!pendingMessage) {
           pendingMessage = appendChatMessage("agent", "Agent", "", { pending: true });
         }
+        const requestMode = pendingMessage.dataset.mode || chatMode.value;
+        pendingMessage.dataset.mode = requestMode;
+        chatMode.disabled = true;
         setPendingChatStatus(pendingMessage, "已收到问题，正在开始处理");
         askButton.disabled = true;
         askButton.textContent = "思考中...";
         answer.innerHTML = "";
         try {
+          const request = { question, session_id: currentSessionId };
+          if (requestMode === "compute") request.mode = requestMode;
           const response = await fetch("/api/chat/stream", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question, session_id: currentSessionId })
+            body: JSON.stringify(request)
           });
           if (!response.ok) {
             const message = await readErrorMessage(response);
@@ -1213,7 +1250,10 @@ def index() -> str:
               pendingMessage.classList.remove("pending");
               const bubble = pendingMessage.querySelector(".bubble");
               bubble.classList.add("rendered");
-              if (window.PaperMindChat?.renderAnswer) {
+              if (requestMode === "compute") {
+                bubble.textContent = String(streamEvent.answer || "");
+                bubble.style.whiteSpace = "pre-wrap";
+              } else if (window.PaperMindChat?.renderAnswer) {
                 PaperMindChat.renderAnswer(
                   bubble,
                   String(streamEvent.answer || ""),
@@ -1224,6 +1264,7 @@ def index() -> str:
               } else {
                 bubble.textContent = String(streamEvent.answer || "");
               }
+              renderComputeArtifacts(bubble, streamEvent);
               chatMessages.scrollTop = chatMessages.scrollHeight;
             }
           });
@@ -1233,6 +1274,7 @@ def index() -> str:
         } finally {
           activeChatRequest = false;
           askButton.disabled = false;
+          chatMode.disabled = false;
           askButton.textContent = "发送";
           questionInput.focus();
         }

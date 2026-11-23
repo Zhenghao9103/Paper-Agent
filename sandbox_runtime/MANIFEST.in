@@ -1,0 +1,4 @@
+include README.md
+recursive-include images Dockerfile *.py
+recursive-include examples *.py
+prune tests
