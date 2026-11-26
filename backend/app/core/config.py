@@ -118,6 +118,10 @@ class Settings(BaseSettings):
     context_reserve_tokens: int = Field(default=16384, gt=0)
     context_keep_recent_tokens: int = Field(default=20000, gt=0)
     context_summary_max_tokens: int = Field(default=2048, gt=0)
+    procedural_memory_mode: Literal["off", "write", "flat", "rsi"] = "off"
+    procedural_memory_context_tokens: int = Field(default=512, gt=0, le=4096)
+    procedural_cluster_threshold: float = Field(default=0.75, ge=-1, le=1)
+    procedural_recall_threshold: float = Field(default=0.45, ge=-1, le=1)
     memory_min_confidence: float = Field(default=0.8, ge=0, le=1)
     memory_related_threshold: float = Field(default=0.75, ge=0, le=1)
     memory_related_limit: int = Field(default=5, gt=0, le=20)

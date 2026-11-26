@@ -1,6 +1,7 @@
 """Small, isolated clients for the OpenAI-compatible routing model."""
 
 import json
+import re
 from functools import lru_cache
 from typing import Any
 
@@ -184,6 +185,7 @@ def agent_json(
     messages: list[dict[str, str]],
     *,
     max_tokens: int,
+    allow_json_fence: bool = False,
 ) -> dict[str, Any]:
     """Call the Agent model for a required, bounded JSON object.
 
@@ -233,6 +235,10 @@ def agent_json(
             "Agent returned an empty response.",
             category="empty_response",
         )
+    if allow_json_fence:
+        fenced = re.fullmatch(r"```(?:json)?[ \t]*\n(.*?)\n\s*```", content.strip(), re.I | re.S)
+        if fenced:
+            content = fenced.group(1)
     try:
         payload = json.loads(content)
     except (TypeError, json.JSONDecodeError) as exc:

@@ -24,6 +24,7 @@ from .memory import (
 from .memory_extractor import has_explicit_memory_intent
 from .memory_harness import process_pending_writes, write_memories
 from .progress import ProgressCallback, emit_progress
+from . import procedural_writes
 from .research import run_research
 
 CONTEXT_ERROR_PAYLOAD = {
@@ -210,7 +211,8 @@ def answer_question(
     if citations:
         trace.append("compress_retrieval_context")
 
-    db.add(ChatMessage(session_id=session.id, role="user", content=question))
+    user_message = ChatMessage(session_id=session.id, role="user", content=question)
+    db.add(user_message)
     db.add(
         ChatMessage(
             session_id=session.id,
@@ -225,6 +227,8 @@ def answer_question(
         )
     )
     db.flush()
+    if settings.procedural_memory_mode != "off" and procedural_writes.eligible(question):
+        procedural_writes.enqueue(db, user_message.id)
     postflight = compact_session_context(
         db,
         session.id,
@@ -267,22 +271,27 @@ def answer_question(
             event_type="trace_event",
             payload=event,
         )
-    db.add(
-        TranscriptEvent(
-            session_id=session.id,
-            event_type="qa",
-            payload=json.dumps(
-                {
-                    "question": question,
-                    "answer": answer,
-                    "trace": trace,
-                    "trace_events": trace_events,
-                    "context_compression": context_compression,
-                    "context_checkpoint": context_checkpoint,
-                },
-                ensure_ascii=False,
-            ),
-        )
+    qa_event = TranscriptEvent(
+        session_id=session.id,
+        event_type="qa",
+        payload=json.dumps(
+            {
+                "user_message_id": user_message.id,
+                "question": question,
+                "answer": answer,
+                "trace": trace,
+                "trace_events": trace_events,
+                "context_compression": context_compression,
+                "context_checkpoint": context_checkpoint,
+            },
+            ensure_ascii=False,
+        ),
     )
+    db.add(qa_event)
+    if (settings.procedural_memory_mode != "off" and not procedural_writes.eligible(question)
+            and procedural_writes.verified_repair(trace_events)):
+        db.flush()
+        procedural_writes.enqueue(db, user_message.id, trace_id=qa_event.id)
     db.commit()
+    procedural_writes.recover(db, settings.procedural_memory_mode)
     return session.id, answer, citations, web_sources, trace, memory_hits, trace_events

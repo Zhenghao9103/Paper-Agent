@@ -32,6 +32,7 @@ from .models import (
 from .rag.bm25_store import ensure_bm25_schema
 from .services.document_jobs import enqueue_pending_and_legacy
 from .services.memory_harness import process_pending_writes, validate_memory_schema
+from .services.procedural_writes import recover as recover_procedural_memory
 from .web import router as web_router
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -49,6 +50,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         Base.metadata.create_all(bind=bind)
         ensure_bm25_schema(bind)
         process_pending_writes(db)
+        recover_procedural_memory(db, get_settings().procedural_memory_mode)
     enqueue_pending_and_legacy(session_factory=session_factory)
     yield
 

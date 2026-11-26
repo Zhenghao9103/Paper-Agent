@@ -4,6 +4,7 @@ from .chunk import DocumentChunk
 from .context_checkpoint import ContextCheckpoint
 from .document import Document
 from .memory import Memory, MemorySyncOperation
+from .procedural_index import SkillCluster, SkillMember
 from .page import DocumentPage
 from .parsing import (
     DocumentBlock,
@@ -28,6 +29,8 @@ __all__ = [
     "DocumentElement",
     "DocumentParseRun",
     "DocumentPage",
+    "SkillCluster",
+    "SkillMember",
     "Memory",
     "MemorySyncOperation",
     "PaperAnalysis",
