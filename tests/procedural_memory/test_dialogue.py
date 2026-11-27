@@ -3,6 +3,7 @@
 from sqlalchemy import select
 
 from backend.app.core.config import get_settings
+from backend.app.models.chat import ChatMessage
 from backend.app.models.memory import ProceduralSkill
 from backend.app.services import (
     answering,
@@ -29,7 +30,13 @@ def test_feedback_across_real_chat_sessions(db_session, monkeypatch):
         "steps": ["start with an example"],
         "constraints": [],
     }
-    monkeypatch.setattr(procedural_writes, "reflect", lambda _: advice)
+    sources = []
+
+    def reflect(source):
+        sources.append(source)
+        return advice
+
+    monkeypatch.setattr(procedural_writes, "reflect", reflect)
 
     def judge(source, proposal, skills):
         if "stop" in source["content"]:
@@ -45,15 +52,20 @@ def test_feedback_across_real_chat_sessions(db_session, monkeypatch):
 
     monkeypatch.setattr(answering, "complex_text_completion", answer)
 
-    def ask(question):
+    def ask(question, session_id=None):
         return chat.answer_question(
-            db_session, question=question, document_id=None, session_id=None
+            db_session, question=question, document_id=None, session_id=session_id
         )
 
-    first = ask("From now on give an example before math definitions.")
+    initial = ask("Explain the geometric mean.")
+    feedback = "From now on give an example before math definitions."
+    first = ask(feedback, initial[0])
     second = ask("Explain the arithmetic mean.")
     assert first[0] != second[0] and second[1].startswith("Example:")
     skill = db_session.scalars(select(ProceduralSkill)).one()
+    message = db_session.get(ChatMessage, skill.source_event_id)
+    assert message.session_id == skill.source_session_id == first[0]
+    assert message.content == feedback and sources[0]["previous_answer"] == initial[1]
     assert next(e for e in second[-1] if e["type"] == "procedural_memory")[
         "used_skills"
     ] == [{"id": skill.id, "version": 1}]

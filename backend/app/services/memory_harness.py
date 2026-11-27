@@ -20,6 +20,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from ..core.config import get_settings
+from ..models.chat import TranscriptEvent
 from ..models.memory import Memory, MemorySyncOperation
 from ..rag.vector_store import (
     collection_space,
@@ -113,6 +114,7 @@ def apply_candidate(
     candidate_index: int,
     source_session_id: int,
     source_checkpoint_id: int | None = None,
+    explicit_source: TranscriptEvent | None = None,
 ) -> dict[str, Any]:
     """Stage one validated candidate durably, without touching Chroma."""
     with _WRITE_LOCK:
@@ -190,6 +192,11 @@ def apply_candidate(
                 db.add(new_memory)
                 db.flush()
                 rows.append(_final_row(new_memory, content, "active"))
+            if explicit_source is not None:
+                db.add(explicit_source)
+                db.flush()
+                for row in rows:
+                    row["source_transcript_id"] = explicit_source.id
             operation = MemorySyncOperation(
                 action=advice.action, payload=json.dumps(rows, ensure_ascii=False),
                 source_session_id=source_session_id, source_checkpoint_id=source_checkpoint_id,
@@ -283,6 +290,12 @@ def write_memories(
     events = process_pending_writes(db)
     attempted = {event["operation_id"] for event in events}
     budget = get_settings().memory_sync_batch_size
+    # An accepted write may outlive a failed answer. Keep the original words
+    # until the normal chat transaction can link the canonical user message.
+    source = TranscriptEvent(
+        session_id=source_session_id, event_type="memory_source",
+        payload=json.dumps({"content": explicit_intent}, ensure_ascii=False),
+    ) if explicit_intent else None
     try:
         candidates = extract_memories(
             previous_session_memory=previous_session_memory,
@@ -291,8 +304,10 @@ def write_memories(
         for index, candidate in enumerate(candidates):
             event = apply_candidate(
                 db, candidate, candidate_index=index, source_session_id=source_session_id,
-                source_checkpoint_id=source_checkpoint_id,
+                source_checkpoint_id=source_checkpoint_id, explicit_source=source,
             )
+            if source is not None and event.get("reason") == "sync_staged":
+                event["source_transcript_id"] = source.id
             events.append(event)
             operation_id = event.get("operation_id")
             if operation_id is not None and len(attempted) < budget:

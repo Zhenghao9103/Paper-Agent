@@ -1,4 +1,4 @@
-# Paper-Agent v2.2
+# Paper-Agent 3.0.0
 
 > **可选本地模型或 Jev 路由的 Evidence-driven Agentic RAG**
 
@@ -9,7 +9,7 @@ Paper-Agent 是一个面向学术 PDF 的本地优先研究助手。它把 PDF �
 | **可选意图 Router** | 默认使用随仓库发布的 Qwen3-1.7B Q4 本地模型，也可选择 Jev API |
 | **三路按需执行** | 在 `direct`、`simple_rag`、`agentic_rag` 之间选择，避免所有问题都启动复杂 Agent |
 | **Evidence-driven Agent Loop** | 围绕 claim 拆解、证据准入、覆盖状态和答案校验执行有边界的多轮研究 |
-| **Memory V2** | 候选提取、建议式 Judge、确定性 Harness 与可恢复的双存储同步 |
+| **Memory V3** | 从交互中按需保留情景来源，跨会话复用语义记忆和操作策略 |
 | **本地知识库** | MinerU、SQLite、BM25、BGE-M3、ChromaDB 与 BGE-Reranker 组成完整 PDF 入库和检索链路 |
 
 ![Paper-Agent 学术论文智能体整体框架](frontend/public/readme/paper-agent-architecture.png)
@@ -34,7 +34,13 @@ Router 根据当前问题和有限会话上下文输出一个意图，不负责�
 
 本发布版只包含运行代码和最终 Router 模型，不包含 `docs/`、`data/`、`reports/`、评估脚本、训练材料或预生成的 Chroma 数据库。
 
-## Memory V2：长期记忆
+## Memory V3：情景来源、语义记忆与程序记忆
+
+用户说“记住，我主要研究多视图聚类”时，语义记忆可以保留研究兴趣，并关联到这条消息。用户纠正讲解方法时，例如“以后先举例再讲定义”，程序记忆可以从反馈及上一条回答中提炼出带适用条件和步骤的 Skill。后续普通问答用 RSI 先选取最多三个相关簇，再从中召回最多四条有效策略，记录实际注入的 Skill ID 和版本。日常问候无需额外建立长期情景条目。
+
+程序记忆与[独立 RSI 模块](https://github.com/Zhenghao9103/RSI/tree/75432f62e92d71b4e5acb7c63cbe8093fd649344)同源，复用 Paper-Agent 的会话和数据库。
+
+### V2 延续的语义记忆
 
 ![Paper-Agent Memory V2 整体架构](frontend/public/readme/memory-v2-architecture.png)
 
@@ -78,11 +84,11 @@ SQLite 是记忆真值来源，Chroma 用于向量检索。Harness 先在 SQLite
 .\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head
 ```
 
-迁移删除旧 Importance 列、创建待同步操作表，并为历史记忆登记 REINDEX，以清除旧向量 metadata；保留内容、类型、pin、最终状态和原时间戳。历史记录在自身重建完成前暂时不可召回。`create_all` 只负责新库建表，不能替代旧库迁移。已有 `.env` 如显式设置了 `APP_VERSION`，请同步改为 `2.2.0`。
+从 2.2 升级到 3.0 时，迁移会创建程序记忆与聚类索引表，已有语义记忆和 Chroma 数据继续使用。从更早版本升级时，V2 迁移还会删除旧 Importance 列、创建待同步操作表，并为历史记忆登记 REINDEX。历史记录在自身重建完成后恢复召回。`create_all` 只负责新库建表。已有 `.env` 如显式设置了 `APP_VERSION`，请同步改为 `3.0.0`。
 
-## Memory V3：本地程序性记忆
+### 本地程序性记忆
 
-同一实例的聊天共享策略库。普通问答可以参考此前从用户纠正中学到的回答步骤。默认关闭，在 `backend/.env` 设置 `PROCEDURAL_MEMORY_MODE` 后重启后端生效。已有数据库先按上面的 Alembic 命令升级。
+同一本地实例的聊天共享策略库。3.0 默认使用 `rsi`，符合条件的反馈会触发反思和判断的模型调用。已有部署显式设置的 `PROCEDURAL_MEMORY_MODE` 优先；在 `backend/.env` 修改后重启后端生效。已有数据库先按上面的 Alembic 命令升级。
 
 | 模式 | 行为 |
 | --- | --- |

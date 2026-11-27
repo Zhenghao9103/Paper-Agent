@@ -114,6 +114,7 @@ def answer_question(
     )
     turn_id = f"session-{session.id}-turn-{user_turn_count + 1}"
     memory_write_events: list[dict] = []
+    explicit_source_id = None
 
     def write_checkpoint(outcome: CheckpointOutcome) -> None:
         if outcome.status == "created":
@@ -139,9 +140,12 @@ def answer_question(
         )
     if has_explicit_memory_intent(question):
         db.commit()
-        memory_write_events.extend(write_memories(
+        explicit_events = write_memories(
             db, source_session_id=session.id, explicit_intent=question,
-        ))
+        )
+        memory_write_events.extend(explicit_events)
+        explicit_source_id = next((event["source_transcript_id"] for event in explicit_events
+                                   if "source_transcript_id" in event), None)
     elif preflight.status != "created":
         # Retry durable work even when this turn does not trigger a new checkpoint.
         memory_write_events.extend(process_pending_writes(db))
@@ -227,6 +231,9 @@ def answer_question(
         )
     )
     db.flush()
+    if explicit_source_id is not None:
+        source = db.get(TranscriptEvent, explicit_source_id)
+        source.payload = json.dumps({"user_message_id": user_message.id})
     if settings.procedural_memory_mode != "off" and procedural_writes.eligible(question):
         procedural_writes.enqueue(db, user_message.id)
     postflight = compact_session_context(

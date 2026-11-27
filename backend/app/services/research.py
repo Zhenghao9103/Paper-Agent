@@ -707,7 +707,10 @@ def run_research(
                 event.update(degraded=True, reason=type(exc).__name__)
             event["timing_ms"] = round((perf_counter() - answer_started) * 1000, 3)
             trace_events.append(event)
-        answer = answer_general(question, section) if section else answer_general(question)
+        if memory_hits or section:
+            answer = answer_general(question, section, semantic_memories=[hit.content for hit in memory_hits])
+        else:
+            answer = answer_general(question)
         answer_timing_ms = (perf_counter() - answer_started) * 1000
         trace.append("answer_direct_agent")
         return ResearchResult(
