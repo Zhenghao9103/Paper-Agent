@@ -1,252 +1,110 @@
 # Paper-Agent 3.0.0
 
-> **可选本地模型或 Jev 路由的 Evidence-driven Agentic RAG**
+Paper-Agent 是一个面向学术 PDF 的本地优先研究助手。上传论文后，可以追问某个实验、比较两篇论文的方法，并沿回答中的引用回到原文核对。默认的 **Research** 模式负责阅读与问答；需要运行 Python 或生成图表时，可以启用 **Compute**。
 
-Paper-Agent 是一个面向学术 PDF 的本地优先研究助手。它把 PDF 结构化解析、混合检索、证据管理和答案校验组织成一条可控的研究链路，并使用本地小模型或 Jev 判断每个问题应该直接处理、执行一次 RAG，还是进入多轮 Agentic RAG。
+3.0 扩展了跨会话记忆。除了记住“我主要研究多视图聚类”这样的研究兴趣，助手还可以从“以后先举例，再给定义”这样的纠正中学到回答步骤。新会话遇到相似问题时，RSI 会检索适用的策略。
 
-| 核心亮点 | 作用 |
-| --- | --- |
-| **可选意图 Router** | 默认使用随仓库发布的 Qwen3-1.7B Q4 本地模型，也可选择 Jev API |
-| **三路按需执行** | 在 `direct`、`simple_rag`、`agentic_rag` 之间选择，避免所有问题都启动复杂 Agent |
-| **Evidence-driven Agent Loop** | 围绕 claim 拆解、证据准入、覆盖状态和答案校验执行有边界的多轮研究 |
-| **Memory V3** | 从交互中按需保留情景来源，跨会话复用语义记忆和操作策略 |
-| **本地知识库** | MinerU、SQLite、BM25、BGE-M3、ChromaDB 与 BGE-Reranker 组成完整 PDF 入库和检索链路 |
+## 在 Windows 上运行
 
-![Paper-Agent 学术论文智能体整体框架](frontend/public/readme/paper-agent-architecture.png)
+完整安装需要 **64 位 Windows、Python 3.11、Git 和至少 20 GB 可用空间**。请在本地磁盘运行 PowerShell，确认 `python --version` 显示 3.11。首次安装需要联网下载解析和检索模型。默认的本地 Router 还需要 Git LFS。
 
-## 意图路由（本地小模型/jev）
-
-Router 根据当前问题和有限会话上下文输出一个意图，不负责生成答案或规划检索：
-
-- `direct`：文档状态等无需检索的问题直接在本地处理。
-- `simple_rag`：执行一次查询规划、混合检索、重排和基于证据的回答。
-- `agentic_rag`：复杂比较、多对象分析和多跳问题进入 Agent 研究循环。
-
-本地模式使用 `Qwen3-1.7B-Router-SFT-V3-Q4_K_M.gguf`，约 1.1 GB，通过 Git LFS 管理；启动器会用 llama.cpp 在 `127.0.0.1:8089` 托管它，无需 Router API Key。Jev 模式通过配置的 API 完成同样的三分类，且不启动本地 Router。两种模式下，Router 超时、协议错误或输出无效时都会保守地降级到 `agentic_rag`。
-
-## Evidence-driven Agentic RAG
-
-传统 RAG 通常在一次检索后直接生成答案。Paper-Agent 的 `agentic_rag` 会先明确需要回答的 claims，再围绕尚未覆盖的证据缺口迭代检索；只有整理出受控的 Evidence Pack 后才允许生成最终答案。
-
-![Evidence-driven Agentic RAG 工作流](frontend/public/readme/agentic-rag-workflow.png)
-
-这条链路并不是把全部控制权交给 LLM：模型负责 claim 拆解、语义判断和答案生成，代码负责工具白名单、Schema 校验、Evidence Pool 状态更新、token 预算、引用合法性、超时与失败降级。默认最多执行 3 轮研究和 5 次工具调用，并受 180 秒总时限约束。
-
-本发布版只包含运行代码和最终 Router 模型，不包含 `docs/`、`data/`、`reports/`、评估脚本、训练材料或预生成的 Chroma 数据库。
-
-## Memory V3：情景来源、语义记忆与程序记忆
-
-用户说“记住，我主要研究多视图聚类”时，语义记忆可以保留研究兴趣，并关联到这条消息。用户纠正讲解方法时，例如“以后先举例再讲定义”，程序记忆可以从反馈及上一条回答中提炼出带适用条件和步骤的 Skill。后续普通问答用 RSI 先选取最多三个相关簇，再从中召回最多四条有效策略，记录实际注入的 Skill ID 和版本。日常问候无需额外建立长期情景条目。
-
-程序记忆与[独立 RSI 模块](https://github.com/Zhenghao9103/RSI/tree/75432f62e92d71b4e5acb7c63cbe8093fd649344)同源，复用 Paper-Agent 的会话和数据库。
-
-### V2 延续的语义记忆
-
-![Paper-Agent Memory V2 整体架构](frontend/public/readme/memory-v2-architecture.png)
-
-Memory 保存用户偏好、研究兴趣、跨会话研究上下文和尚未完成的事项，对应 `user_preference`、`research_interest`、`research_context`、`open_loop` 四种类型。当前会话的 SessionMemory 与近期消息提供短期上下文，长期记忆则跨会话复用；论文事实及引用仍来自检索证据。
-
-### Write Memory
-
-Checkpoint 提交后，Memory Extractor 对比 old/new SessionMemory 的四字段快照：目标与约束、当前决定、待解问题、下一步行动，输出 `memory_type/content/confidence` 候选。图中“本轮新增对话”用于生成会话状态，不会直接传给长期提取接口；`confirmed_findings`、Evidence、工具输出及完整回答也不进入该接口。
-
-Memory Harness 先校验、规范化去重，再筛选同类型相关旧记忆。规则无法判断关系时，由同一个 Extractor 兼任 Judge，基于 Harness 提供的受限快照给出建议；数据库查询、目标复核及状态修改始终由 Harness 执行。相似度只用于筛选相关项，不直接证明重复或冲突。
-
-| 操作 | 处理方式 |
-| --- | --- |
-| ADD | 独立事项创建新记录 |
-| UPDATE | 同一事项被细化，保留 ID，使用候选内容 |
-| MERGE | 信息互补，保留目标 ID，使用经校验的合并稿 |
-| SUPERSEDE | 明确替代旧状态，旧记录 superseded，新记录 active |
-| IGNORE | 重复、低 confidence、不确定、无效建议或过期目标，不修改记忆 |
-
-“记住、以后、我的偏好是”等明确指令走同一个 Extractor/Harness，在本轮研究前尝试同步，让成功写入的偏好立即生效。普通有引用回答不再自动写入长期记忆；提取失败不撤销成功的 checkpoint。
-
-### Read Memory
-
-读取保持 `问题 embedding → Chroma 候选 → SQLite active 校验 → 排序 → Top-K → 上下文注入`。默认召回 20 条候选，过滤低于 0.20 的语义相似度，最终取 Top-3；兼容历史 `research_topic`，排除 pending/superseded 记录。
-
-`score = 0.8 × semantic + 0.2 × recency`，其中 `recency = 2 ^ (-age_days / 90)`，优先使用 SQLite 的 `updated_at`，缺失时回退到 `created_at`。Importance 已删除；confidence 只用于写入门槛，pin 仅作标记，均不参与排序。图中 metadata 时间戳为概念展示，实际新近度以 SQLite 时间戳为准。
-
-Memory 只作为 context，不能生成 Evidence ID 或 citation，也不作为论文事实依据。回答中的方法、实验数值和论文结论仍须由可验证的检索证据支撑。
-
-### 持久化同步与升级
-
-SQLite 是记忆真值来源，Chroma 用于向量检索。Harness 先在 SQLite 事务中登记持久化待同步操作（Durable Outbox），将受影响记录设为 `pending_sync` 并提交，再执行 Chroma 同步；所有向量操作成功后，才在 SQLite 事务中更新内容与最终状态。UPDATE/MERGE 重新 embedding，SUPERSEDE 同步旧、新记录。
-
-失败或中断保留 pending，允许暂时不可召回；启动和后续写入时在单后端进程内串行、有限、幂等重放。IGNORE、重试和单纯状态切换不刷新记忆时间戳，只有实际内容更新才刷新 `updated_at`。
-
-默认 confidence 门槛 0.8，相关旧记忆阈值 0.75、最多 5 条，每轮同步最多 20 个操作；阈值和评分权重集中配置于 Settings，示例见 `backend/.env.example`。
-
-升级已有安装时，先停止后端，备份当前 SQLite 数据库和 Chroma 目录，再在项目根目录执行：
+**1. 克隆仓库并安装。** 先跳过克隆时的模型下载，再由安装器按选定的 Router 拉取所需文件。
 
 ```powershell
-.\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head
-```
-
-从 2.2 升级到 3.0 时，迁移会创建程序记忆与聚类索引表，已有语义记忆和 Chroma 数据继续使用。从更早版本升级时，V2 迁移还会删除旧 Importance 列、创建待同步操作表，并为历史记忆登记 REINDEX。历史记录在自身重建完成后恢复召回。`create_all` 只负责新库建表。已有 `.env` 如显式设置了 `APP_VERSION`，请同步改为 `3.0.0`。
-
-### 本地程序性记忆
-
-同一本地实例的聊天共享策略库。3.0 默认使用 `rsi`，符合条件的反馈会触发反思和判断的模型调用。已有部署显式设置的 `PROCEDURAL_MEMORY_MODE` 优先；在 `backend/.env` 修改后重启后端生效。已有数据库先按上面的 Alembic 命令升级。
-
-| 模式 | 行为 |
-| --- | --- |
-| `off` | 使用原有记忆流程 |
-| `write` | 对明确反馈或核验通过的修复事件反思，只保存策略 |
-| `flat` | 写入并比较全部有效策略，按相似度选取 |
-| `rsi` | 写入并在线归簇，最多从 3 个簇中召回 4 条策略 |
-
-默认归簇阈值为 0.75，召回阈值为 0.45，策略区预算为 512 token。普通问答追踪里的 `procedural_memory` 记录实际装配的 ID、版本、token 数和降级状态。反思与生成使用 Agent 模型，检索使用本地 BGE-M3。模型判断可以跳过一次反馈，最终是否学到策略可从 `procedural_feedback` 的状态、原因及对应版本检查。
-
-SQLite 保存 Skill 和版本反馈。启动和后续对话会重试待处理操作，索引写入和确认同事务完成。索引丢失时可在项目根目录运行以下命令，从有效 Skill 重建。关闭功能可将模式设回 `off` 并重启。
-
-```powershell
-.\.venv\Scripts\python.exe -c "from backend.app.db.session import SessionLocal; from backend.app.services.procedural_retrieval import rebuild_index; db=SessionLocal(); rebuild_index(db); db.commit(); db.close()"
-```
-
-四组开发评测使用隔离的临时 SQLite 库。配置 Agent 模型和本地 BGE-M3 后运行 `python -m scripts.eval_procedural_memory --output reports/memory-v3.json`。结果包含写入决定、冻结的 Skill 快照、逐题回答、命中、格式达成、耗时及注入 token。功能回归可运行 `python -m pytest tests/procedural_memory -q`。
-
-## 系统要求
-
-- Windows x64
-- Python 3.11（必须是 3.11）
-- Git；选择本地 Router 时还需 Git LFS
-- 至少 20 GB 可用空间
-- 首次完整安装需要网络连接
-
-## 完整安装
-
-克隆时先跳过 Git LFS 自动下载，再选择 Router：
-
-```powershell
-$env:GIT_LFS_SKIP_SMUDGE="1"
+$env:GIT_LFS_SKIP_SMUDGE = '1'
 git clone https://github.com/Zhenghao9103/Paper-Agent.git
 Remove-Item Env:GIT_LFS_SKIP_SMUDGE
 cd Paper-Agent
-```
-
-在项目根目录创建或编辑 `.env`，用 `ROUTER_PROVIDER` 选择 Router：
-
-```dotenv
-ROUTER_PROVIDER=local
-```
-
-可填 `local` 或 `jev`；没有 `.env` 或没有这一项时默认使用 `local`。安装时运行 `.\setup.ps1`，脚本会读取该配置。也可临时用 `.\setup.ps1 -RouterProvider jev` 覆盖 `.env`，并将所选模式写回 `.env`。
-
-本地 Router 会下载约 1.1 GB 的 Q4 模型及 llama.cpp：
-
-```powershell
 git lfs install
 .\setup.ps1
 ```
 
-`setup.ps1` 会创建主环境和独立图表理解环境、安装依赖、下载并校验 BGE-M3、BGE-Reranker、MinerU 主模型、MinerU 图表模型及 tiktoken 缓存，并生成仅引用当前克隆目录的本地配置。选择本地 Router 时还会拉取最终 Q4 Router 和 llama.cpp。
+如果使用 **Jev 云端路由**，克隆后直接运行 `.\setup.ps1 -RouterProvider jev` 即可跳过 Git LFS、约 1.1 GB 的本地 Qwen Router 和 llama.cpp。两种安装方式都会准备 MinerU、BGE-M3 和 BGE-Reranker。各项资源的版本见 [资源锁定清单](resources.lock.json)。
 
-`.mineru/`、`.hf-cache/` 和 `.cache/` 都由安装脚本生成；本地 Router 还会生成 `.tools/`。用户不需要手动下载或提交这些目录。所有外部资源的版本和校验信息记录在 `resources.lock.json`。
-
-如选择 Jev，先将根目录 `.env` 中的配置改为：
+**2. 配置回答模型。** 安装完成后，编辑项目根目录的 `.env`，填入支持 OpenAI 兼容接口的模型服务。Router 只负责选择问答路径，两种路由方式都需要配置回答模型。
 
 ```dotenv
-ROUTER_PROVIDER=jev
-JEV_API_KEY=your_api_key
-JEV_BASE_URL=
-JEV_MODEL=jev-1.13.0
-```
-
-然后运行安装脚本，无需下载本地 Q4 Router 和 llama.cpp：
-
-```powershell
-.\setup.ps1
-```
-
-Jev 模式仅省去 Router 模型与 llama.cpp，PDF 解析和检索所需模型仍照常安装。安装后改动 `.env` 的 `ROUTER_PROVIDER`，重启程序即可切换；若最初按 Jev 模式安装，切换回本地 Router 时还需运行 `.\setup.ps1` 下载本地 Router 资源。
-
-## 配置模型服务
-
-安装脚本会生成根目录 `.env`，并保留已存在的 API Key。至少配置用于回答和 Agentic RAG 的模型：
-
-```dotenv
-AGENT_API_KEY=your_api_key
 AGENT_BASE_URL=https://your-provider.example/v1
+AGENT_API_KEY=your_api_key
 AGENT_MODEL=your_model
 ```
 
-本地 Router 无需远程 API Key。选择 Jev 时，在根目录 `.env` 填写 `JEV_API_KEY`。使用 TypeSafe 官方密钥时可将 `JEV_BASE_URL` 留空；使用 OpenCode Zen 等渠道时，还需填写对应的 `JEV_BASE_URL` 和 `JEV_MODEL`。`JUDGE_*` 仅用于开发期质量评估，发布版正常运行不需要配置。
+选择 Jev 时，在同一文件中填写 `JEV_API_KEY`。使用自定义服务地址或模型时，同时设置 `JEV_BASE_URL` 和 `JEV_MODEL`。如果配置后仍连到了旧模型，检查 `backend/.env` 是否也设置了同名模型参数，该文件中的值优先。
 
-## 启动与使用
+**3. 启动并试问一篇论文。**
 
 ```powershell
 .\.venv\Scripts\python.exe main.py
 ```
 
-浏览器默认打开 `http://127.0.0.1:8000`。如果不希望自动打开：
+浏览器会打开 [本地聊天页](http://127.0.0.1:8000)。上传一篇 PDF，等文档状态变为 `indexed`，再问“这篇论文用哪些数据集做了对比实验？请指出原文依据”。服务版本可以在 [健康检查](http://127.0.0.1:8000/api/health) 查看。若希望自行打开浏览器，启动前设置 `$env:PAPER_AGENT_OPEN_BROWSER = '0'`。
+
+## Research 如何回答
+
+MinerU 解析论文，SQLite 保存结构化内容。检索时，BM25 匹配术语，BGE-M3 和 Chroma 召回语义相关片段，BGE-Reranker 对候选片段重排。Router 根据问题和当前会话选择执行路径。
+
+| 问题示例 | 路径 | 实际行为 |
+| --- | --- | --- |
+| “我上传了几篇论文？” | `direct` | 查本地文档记录。普通概念问答也走这条路径，由回答模型生成。 |
+| “这篇论文的消融实验用了哪些指标？” | `simple_rag` | 规划查询，执行一轮混合检索和重排，再根据证据回答。 |
+| “比较两篇论文的实验设置，哪些差异会影响结论？” | `agentic_rag` | 将问题拆成需要核对的要点，围绕证据缺口继续检索，再生成并校验答案。 |
+
+默认研究循环最多 3 轮、5 次工具调用，总时限为 180 秒。论文中的数值、方法和结论由检索证据支撑，用户记忆用于调整上下文和讲解方式。
+
+![Agentic RAG 从问题拆解到证据校验的流程](frontend/public/readme/agentic-rag-workflow.png)
+
+## Memory V3 如何从对话中学习
+
+| 记忆 | 在 Paper-Agent 中的作用 | 例子 |
+| --- | --- | --- |
+| 情景记忆 | 按需关联支撑记忆写入的消息、反馈或会话检查点。普通寒暄无需额外建一条长期情景记录。 | 保留用户在哪次讲解后要求改变解释顺序。 |
+| 语义记忆 | 跨会话复用用户偏好、研究兴趣、研究上下文和待办事项。 | 用户说“记住，我主要研究多视图聚类”，后续可以据此给出阅读建议。 |
+| 程序记忆 | 从明确反馈或有可核验结果的交互中提炼带适用条件和步骤的策略，称为 Skill。 | 下次解释数学概念时，先给一个数字例子，再给定义。 |
+
+同一本地实例的会话共享策略库。普通问答默认通过 **RSI** 先选最多 3 个相关簇，再从中选最多 4 条有效策略。聊天追踪中的 `procedural_memory` 记录实际传入回答模型的 Skill ID 和版本。一次反馈能否形成策略取决于反思与判断结果。
+
+在 `backend/.env` 中设置 `PROCEDURAL_MEMORY_MODE`，重启后生效。默认值为 `rsi`，已有部署的显式设置优先。
+
+| 模式 | 行为 |
+| --- | --- |
+| `rsi` | 写入策略，按簇检索并注入相关策略 |
+| `flat` | 写入策略，在全部有效策略中按相似度检索 |
+| `write` | 提炼并写入策略，回答时跳过策略召回 |
+| `off` | 关闭程序记忆，继续使用原有语义记忆 |
+
+Paper-Agent 内置了与[独立 RSI 模块](https://github.com/Zhenghao9103/RSI/tree/75432f62e92d71b4e5acb7c63cbe8093fd649344)同源的实现，直接使用应用的会话、模型配置和数据库。
+
+## 从 2.2 升级
+
+1. 停止后端，备份当前使用的 SQLite 数据库和 Chroma 目录。默认位置为 `backend/data/papermind.db` 和 `chroma/`。
+2. 更新到 3.0 源码后，在项目根目录、使用原部署的数据库配置运行迁移。
+
+   ```powershell
+   .\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head
+   ```
+
+3. 如果旧配置显式设置过 `APP_VERSION`，更新为 `3.0.0`。重启后检查 `/api/health`，再用一个已有的研究兴趣验证跨会话召回。迁移会增加程序记忆与聚类索引表，继续使用原有语义记忆。
+
+## 可选的 Sandbox Compute
+
+标准安装即可使用 Research。需要执行计算时，先准备 Docker Desktop 的 Linux 容器引擎，在项目根目录运行：
 
 ```powershell
-$env:PAPER_AGENT_OPEN_BROWSER="0"
-.\.venv\Scripts\python.exe main.py
-```
-
-上传 PDF 后会自动生成当前文档的 SQLite、BM25 和 Chroma 数据；仓库不提供也不需要预置 Chroma。文档状态只有在向量数量与内容校验完成后才会变为 `indexed`。
-
-## 可选 Sandbox 计算
-
-聊天页默认使用 Research。显式选择 Compute 后，可以在本地 Docker 隔离环境中运行
-Python，查看计算输出和下载图表。如需使用 Compute，请额外准备 Sandbox。
-
-完成标准安装后，准备 Docker Desktop 的 Linux 容器引擎，在项目根目录运行：
-
-```powershell
-& .\.venv\Scripts\python.exe -m pip install -r backend/requirements-sandbox.txt
-& .\.venv\Scripts\python.exe -m venv .tools/sandbox-venv
-& .\.tools\sandbox-venv\Scripts\python.exe -m pip install './sandbox_runtime[mcp]'
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements-sandbox.txt
+.\.venv\Scripts\python.exe -m venv .tools/sandbox-venv
+.\.tools\sandbox-venv\Scripts\python.exe -m pip install './sandbox_runtime[mcp]'
 docker build -t paper-agent-sandbox:0.1.0 sandbox_runtime/images/python
-```
-
-在启动 Paper-Agent 的 PowerShell 中设置以下变量，也可把对应设置写入本机
-`backend/.env`。计算代码由已配置的 Agent 模型生成。
-
-```powershell
 $env:SANDBOX_ENABLED = 'true'
 $env:SANDBOX_PYTHON_EXECUTABLE = (Resolve-Path '.tools/sandbox-venv/Scripts/python.exe').Path
 ```
 
-重启后，在聊天页选择 Compute，发送“计算 [1, 2, 3, 4] 的均值并画折线图”。
-预期输出为 `2.5`，对话中可以查看和下载 PNG。要停用，设回
-`SANDBOX_ENABLED=false` 后重启。详见 [Sandbox Runtime](sandbox_runtime/README.md)。
+从同一 PowerShell 启动或重启 Paper-Agent，在聊天页选择 **Compute**，试问“计算 [1, 2, 3, 4] 的均值并画折线图”。预期可以看到均值 `2.5` 和可下载的图表。环境变量也可写入 `backend/.env` 以便下次启动时使用。执行环境和产物说明见 [Sandbox Runtime](sandbox_runtime/README.md)。
 
-## 主要能力
+## 开发与评测
 
-- MinerU PDF 结构化解析、公式识别与图表理解
-- SQLite 文档存储与 BM25 全文检索
-- BGE-M3 向量召回、ChromaDB 本地索引和 BGE-Reranker 精排
-- 可选本地 Qwen3-1.7B Q4 GGUF Router 或 Jev API
-- `direct`、`simple_rag`、`agentic_rag` 三类按需问答路径
-- Research Planner、Evidence Judge、Evidence Pool、Evidence Pack 与 Answer Verifier
-- 工具预算、超时、Schema 校验、引用验证和安全轨迹记录
-- 会话记忆与上下文压缩
-- 内置 Web 界面及 React/Vite 前端源码
+- [后端配置示例](backend/.env.example)列出了路由、模型、检索、记忆和 Sandbox 的配置项。
+- [程序记忆测试](tests/procedural_memory)覆盖跨会话使用、来源追溯、索引恢复和数据库升级。安装测试工具后，在项目根目录运行 `python -m pytest tests/procedural_memory -q`。
+- [Memory V3 开发评测](eval/memory/RESULTS.md)记录了关闭程序记忆、仅写入、平面检索和 RSI 四组对照的逐项结果与局限。
+- [Router 评测](eval/router/README.md)和 [RAG 评测](eval/rag/)提供路由分类、检索和回答质量的复现实验入口。
 
-## 目录说明
-
-```text
-backend/             FastAPI 后端、解析、检索与 Agent 代码
-frontend/            React/Vite 前端源码与已构建静态资源
-models/router/       唯一随仓库发布的 Q4 Router（Git LFS）
-scripts/             安装、安装后检查与发布审计脚本
-resources.lock.json  外部资源版本锁
-setup.ps1            Windows 完整安装入口
-```
-
-以下均为运行时生成并被 Git 忽略的目录：`.mineru/`、`.tools/`、`.hf-cache/`、`.cache/`、`chroma/`、`storage/`、`backend/data/`。
-
-## 常见问题
-
-- `Git LFS resource mismatch`：确认已安装 Git LFS，然后运行 `git lfs pull`。
-- 可用空间不足：清理磁盘后重新运行 `setup.ps1`；已校验完成的资源会被复用。
-- 外部资源下载中断：直接重跑 `setup.ps1`，临时文件不会替换已完成资源。
-- API 无法生成回答：检查 `.env` 中 `AGENT_API_KEY`、`AGENT_BASE_URL` 与 `AGENT_MODEL`。
-
-## License
-
-[MIT](LICENSE)
+[MIT 许可证](LICENSE)
