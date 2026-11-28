@@ -1,0 +1,12 @@
+{
+  "question": "Give me cooking instructions for fried rice.",
+  "purpose": "post-hoc near-condition smoke only",
+  "ids": [
+    {
+      "id": "8d5ade00ea0e4c788dea229f8636ce50",
+      "version": 1
+    }
+  ],
+  "baseline": "Here are general cooking instructions for fried rice:\n\n1. Heat oil in a large skillet or wok over medium-high heat.\n2. Add chopped onions and garlic, stir-fry until fragrant.\n3. Add rice and stir-fry for 1-2 minutes.\n4. Add vegetables (such as bell peppers, carrots, and peas) and stir-fry until tender.\n5. Add soy sauce, oyster sauce, and MSG, stir-fry until well combined.\n6. Add scrambled eggs and stir-fry until cooked.\n7. Add cooked meat (such as chicken, beef, or shrimp) and stir-fry until heated through.\n8. Add rice again and stir-fry until rice is well coated with sauce.\n9. Add sesame oil and stir-fry until fragrant.\n10. Serve hot.",
+  "rsi": "Sure, here are the cooking instructions for fried rice:\n\n1. **Prep list:**\n   - Rice (preferably cooked the night before)\n   - Vegetables (such as onions, bell peppers, and carrots)\n   - Protein (such as chicken, beef, or tofu)\n   - Eggs\n   - Oil\n   - Seasonings (such as soy sauce, rice vinegar, and sugar)\n   - Water or broth\n   - Salt\n   - Optional: sesame seeds, green onions, and other toppings\n\n2. **Cooking steps:**\n   - Heat oil in a large skillet or wok over medium-high heat.\n   - Add chopped vegetables and stir-fry until they are tender.\n   - Add the protein and stir-fry until it is cooked through.\n   - Pour in the cooked rice and stir-fry until it is well combined.\n   - Add seasonings and stir until they are well mixed.\n   - Add water or broth and stir until the rice is cooked.\n   - Add eggs and stir until they are fully cooked.\n   - Season with salt and serve with desired toppings."
+}

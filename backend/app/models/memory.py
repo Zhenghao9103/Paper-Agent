@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, Text, func
+from sqlalchemy import JSON, String, Boolean, DateTime, Integer, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..db.base import Base
@@ -46,3 +46,41 @@ class MemorySyncOperation(Base):
         onupdate=datetime.utcnow,
         server_default=func.current_timestamp(),
     )
+
+
+class ProceduralSkill(Base):
+    __tablename__ = "procedural_skills"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    version: Mapped[int] = mapped_column(default=1)
+    active: Mapped[bool] = mapped_column(default=True)
+    condition: Mapped[str] = mapped_column(Text)
+    steps: Mapped[list[str]] = mapped_column(JSON)
+    constraints: Mapped[list[str]] = mapped_column(JSON)
+    source_event_id: Mapped[int]
+    source_session_id: Mapped[int]
+
+
+class ProceduralFeedback(Base):
+    __tablename__ = "procedural_feedback"
+
+    message_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    status: Mapped[str] = mapped_column(String, default="pending", index=True)
+    trace_id: Mapped[int | None]
+    strategy: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    attempts: Mapped[int] = mapped_column(default=0)
+    reason: Mapped[str | None]
+    skill_id: Mapped[str | None]
+    version: Mapped[int | None]
+    action: Mapped[str | None]
+
+
+class ProceduralSync(Base):
+    __tablename__ = "procedural_sync"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    skill_id: Mapped[str]
+    version: Mapped[int]
+    attempts: Mapped[int] = mapped_column(default=0)
+    status: Mapped[str] = mapped_column(default="pending", index=True)
+    last_error: Mapped[str | None]

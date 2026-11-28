@@ -35,6 +35,7 @@ from .answering import (
     AnswerResult,
     answer_direct,
     answer_general,
+    prepare_procedural_context,
     generate_agentic_answer,
     generate_answer,
     is_document_operation,
@@ -44,6 +45,7 @@ from .intent_router import RoutingOutcome, route_question
 from .llm import ContextWindowExceededError
 from .memory import MemoryHit, query_relevant_memories
 from .progress import ProgressCallback, emit_progress
+from .procedural_retrieval import retrieve_skills
 from .query_planner import QueryPlanningOutcome, plan_queries
 
 
@@ -689,7 +691,26 @@ def run_research(
                 ],
             )
         answer_started = perf_counter()
-        answer = answer_general(question)
+        section = ""
+        if settings.procedural_memory_mode in {"flat", "rsi"}:
+            event = {"type": "procedural_memory", "mode": settings.procedural_memory_mode,
+                     "used_skills": [], "token_count": 0, "degraded": False}
+            try:
+                skills, degraded = retrieve_skills(db, question, settings.procedural_memory_mode)
+                context = prepare_procedural_context(
+                    skills, settings.procedural_memory_context_tokens, settings.resolved_agent_model or ""
+                )
+                section = context.section
+                event.update(used_skills=context.used_skills, token_count=context.token_count,
+                             degraded=degraded)
+            except Exception as exc:
+                event.update(degraded=True, reason=type(exc).__name__)
+            event["timing_ms"] = round((perf_counter() - answer_started) * 1000, 3)
+            trace_events.append(event)
+        if memory_hits or section:
+            answer = answer_general(question, section, semantic_memories=[hit.content for hit in memory_hits])
+        else:
+            answer = answer_general(question)
         answer_timing_ms = (perf_counter() - answer_started) * 1000
         trace.append("answer_direct_agent")
         return ResearchResult(

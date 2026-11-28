@@ -1,0 +1,16 @@
+{
+  "learning": [
+    {"key":"math","previous_answer":"The median is the middle order statistic.","feedback":"From now on, when teaching me a math concept, use the heading Tiny example first and the heading Definition second. Show a numerical example before the formal definition."},
+    {"key":"recipe","previous_answer":"Cook the noodles until tender.","feedback":"From now on, when giving me cooking instructions, use the heading Prep list before the heading Cooking steps. List ingredients before numbered directions."},
+    {"key":"debug","previous_answer":"Check the logs to debug the error.","feedback":"From now on, when troubleshooting software problems, use the heading First check before the heading Next check. Give one specific diagnostic action under each heading."},
+    {"key":"neutral","previous_answer":"Hello!","feedback":"Thanks."}
+  ],
+  "evaluation": [
+    {"id":"math-1","key":"math","question":"Teach me the mathematical concept of an arithmetic mean.","markers":["Tiny example","Definition"],"topic":["sum","average","divide"]},
+    {"id":"recipe-1","key":"recipe","question":"How can I cook a basic mushroom omelet?","markers":["Prep list","Cooking steps"],"topic":["egg"]},
+    {"id":"debug-1","key":"debug","question":"How should I troubleshoot a Python program that cannot import an installed package?","markers":["First check","Next check"],"topic":["environment","interpreter","pip"]},
+    {"id":"math-2","key":"math","question":"Explain the mathematical concept of a weighted average.","markers":["Tiny example","Definition"],"topic":["weight"]},
+    {"id":"recipe-2","key":"recipe","question":"How do I make a tomato soup from scratch?","markers":["Prep list","Cooking steps"],"topic":["tomato"]},
+    {"id":"debug-2","key":"debug","question":"My software cannot open a file by relative path. How do I diagnose the problem?","markers":["First check","Next check"],"topic":["directory","path"]}
+  ]
+}

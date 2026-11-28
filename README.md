@@ -1,4 +1,4 @@
-# Paper-Agent v2.2
+# Paper-Agent 3.0.0
 
 > **可选本地模型或 Jev 路由的 Evidence-driven Agentic RAG**
 
@@ -9,7 +9,7 @@ Paper-Agent 是一个面向学术 PDF 的本地优先研究助手。它把 PDF �
 | **可选意图 Router** | 默认使用随仓库发布的 Qwen3-1.7B Q4 本地模型，也可选择 Jev API |
 | **三路按需执行** | 在 `direct`、`simple_rag`、`agentic_rag` 之间选择，避免所有问题都启动复杂 Agent |
 | **Evidence-driven Agent Loop** | 围绕 claim 拆解、证据准入、覆盖状态和答案校验执行有边界的多轮研究 |
-| **Memory V2** | 候选提取、建议式 Judge、确定性 Harness 与可恢复的双存储同步 |
+| **Memory V3** | 从交互中按需保留情景来源，跨会话复用语义记忆和操作策略 |
 | **本地知识库** | MinerU、SQLite、BM25、BGE-M3、ChromaDB 与 BGE-Reranker 组成完整 PDF 入库和检索链路 |
 
 ![Paper-Agent 学术论文智能体整体框架](frontend/public/readme/paper-agent-architecture.png)
@@ -34,7 +34,13 @@ Router 根据当前问题和有限会话上下文输出一个意图，不负责�
 
 本发布版只包含运行代码和最终 Router 模型，不包含 `docs/`、`data/`、`reports/`、评估脚本、训练材料或预生成的 Chroma 数据库。
 
-## Memory V2：长期记忆
+## Memory V3：情景来源、语义记忆与程序记忆
+
+用户说“记住，我主要研究多视图聚类”时，语义记忆可以保留研究兴趣，并关联到这条消息。用户纠正讲解方法时，例如“以后先举例再讲定义”，程序记忆可以从反馈及上一条回答中提炼出带适用条件和步骤的 Skill。后续普通问答用 RSI 先选取最多三个相关簇，再从中召回最多四条有效策略，记录实际注入的 Skill ID 和版本。日常问候无需额外建立长期情景条目。
+
+程序记忆与[独立 RSI 模块](https://github.com/Zhenghao9103/RSI/tree/75432f62e92d71b4e5acb7c63cbe8093fd649344)同源，复用 Paper-Agent 的会话和数据库。
+
+### V2 延续的语义记忆
 
 ![Paper-Agent Memory V2 整体架构](frontend/public/readme/memory-v2-architecture.png)
 
@@ -78,7 +84,28 @@ SQLite 是记忆真值来源，Chroma 用于向量检索。Harness 先在 SQLite
 .\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head
 ```
 
-迁移删除旧 Importance 列、创建待同步操作表，并为历史记忆登记 REINDEX，以清除旧向量 metadata；保留内容、类型、pin、最终状态和原时间戳。历史记录在自身重建完成前暂时不可召回。`create_all` 只负责新库建表，不能替代旧库迁移。已有 `.env` 如显式设置了 `APP_VERSION`，请同步改为 `2.2.0`。
+从 2.2 升级到 3.0 时，迁移会创建程序记忆与聚类索引表，已有语义记忆和 Chroma 数据继续使用。从更早版本升级时，V2 迁移还会删除旧 Importance 列、创建待同步操作表，并为历史记忆登记 REINDEX。历史记录在自身重建完成后恢复召回。`create_all` 只负责新库建表。已有 `.env` 如显式设置了 `APP_VERSION`，请同步改为 `3.0.0`。
+
+### 本地程序性记忆
+
+同一本地实例的聊天共享策略库。3.0 默认使用 `rsi`，符合条件的反馈会触发反思和判断的模型调用。已有部署显式设置的 `PROCEDURAL_MEMORY_MODE` 优先；在 `backend/.env` 修改后重启后端生效。已有数据库先按上面的 Alembic 命令升级。
+
+| 模式 | 行为 |
+| --- | --- |
+| `off` | 使用原有记忆流程 |
+| `write` | 对明确反馈或核验通过的修复事件反思，只保存策略 |
+| `flat` | 写入并比较全部有效策略，按相似度选取 |
+| `rsi` | 写入并在线归簇，最多从 3 个簇中召回 4 条策略 |
+
+默认归簇阈值为 0.75，召回阈值为 0.45，策略区预算为 512 token。普通问答追踪里的 `procedural_memory` 记录实际装配的 ID、版本、token 数和降级状态。反思与生成使用 Agent 模型，检索使用本地 BGE-M3。模型判断可以跳过一次反馈，最终是否学到策略可从 `procedural_feedback` 的状态、原因及对应版本检查。
+
+SQLite 保存 Skill 和版本反馈。启动和后续对话会重试待处理操作，索引写入和确认同事务完成。索引丢失时可在项目根目录运行以下命令，从有效 Skill 重建。关闭功能可将模式设回 `off` 并重启。
+
+```powershell
+.\.venv\Scripts\python.exe -c "from backend.app.db.session import SessionLocal; from backend.app.services.procedural_retrieval import rebuild_index; db=SessionLocal(); rebuild_index(db); db.commit(); db.close()"
+```
+
+四组开发评测使用隔离的临时 SQLite 库。配置 Agent 模型和本地 BGE-M3 后运行 `python -m scripts.eval_procedural_memory --output reports/memory-v3.json`。结果包含写入决定、冻结的 Skill 快照、逐题回答、命中、格式达成、耗时及注入 token。功能回归可运行 `python -m pytest tests/procedural_memory -q`。
 
 ## 系统要求
 

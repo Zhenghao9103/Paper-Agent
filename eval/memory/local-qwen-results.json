@@ -1,0 +1,470 @@
+{
+  "config": {
+    "agent": "memory-eval",
+    "embedding": "BAAI/bge-m3",
+    "cluster_threshold": 0.75,
+    "recall_threshold": 0.45,
+    "context_tokens": 512,
+    "model_description": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+    "seed": "42",
+    "routing": "fixed direct, empty semantic history",
+    "scoring": "both requested headings in order and at least one topic term"
+  },
+  "learning": [
+    {
+      "key": "math",
+      "status": "skipped",
+      "skill_id": null,
+      "action": "skip",
+      "reason": null,
+      "latency_ms": 16140.99
+    },
+    {
+      "key": "recipe",
+      "status": "applied",
+      "skill_id": "8d5ade00ea0e4c788dea229f8636ce50",
+      "action": "add",
+      "reason": null,
+      "latency_ms": 22796.86
+    },
+    {
+      "key": "debug",
+      "status": "rejected",
+      "skill_id": null,
+      "action": "skip",
+      "reason": "ValueError",
+      "latency_ms": 45306.08
+    },
+    {
+      "key": "neutral",
+      "status": "skipped",
+      "skill_id": null,
+      "action": null,
+      "reason": null,
+      "latency_ms": 2.85
+    }
+  ],
+  "snapshot": [
+    {
+      "id": "8d5ade00ea0e4c788dea229f8636ce50",
+      "version": 1,
+      "condition": "Give cooking instructions with a Prep list before numbered directions",
+      "steps": [
+        "List ingredients before numbered directions",
+        "Use the heading 'Prep list' before the heading 'Cooking steps'"
+      ],
+      "constraints": [
+        "List ingredients before numbered directions",
+        "Use the heading 'Prep list' before the heading 'Cooking steps'"
+      ],
+      "active": true
+    }
+  ],
+  "evaluation": [
+    {
+      "mode": "off",
+      "id": "math-1",
+      "question": "Teach me the mathematical concept of an arithmetic mean.",
+      "answer": "The arithmetic mean is a measure of central tendency in statistics. It is calculated by summing all the values in a dataset and then dividing by the number of values. It represents the average value of a set of numbers.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 2643.64
+    },
+    {
+      "mode": "off",
+      "id": "recipe-1",
+      "question": "How can I cook a basic mushroom omelet?",
+      "answer": "To cook a basic mushroom omelet, you'll need:\n\n1. 2 eggs\n2. 1/4 cup milk or water\n3. 1/4 cup chopped mushrooms\n4. Salt and pepper to taste\n\nInstructions:\n1. Beat the eggs in a bowl.\n2. Add milk or water, mushrooms, salt, and pepper to the beaten eggs.\n3. Heat a non-stick skillet over medium heat.\n4. Pour the egg mixture into the skillet.\n5. Let it cook for about 2-3 minutes on one side until the edges start to set.\n6. Flip the omelet and cook for another 2-3 minutes on the other side until both sides are golden brown.\n7. Remove from heat and serve.",
+      "expected": {
+        "id": "8d5ade00ea0e4c788dea229f8636ce50",
+        "version": 1
+      },
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 12175.23
+    },
+    {
+      "mode": "off",
+      "id": "debug-1",
+      "question": "How should I troubleshoot a Python program that cannot import an installed package?",
+      "answer": "To troubleshoot a Python program that cannot import an installed package, follow these steps:\n\n1. **Check the package name**: Ensure the package name is spelled correctly and matches the one installed on your system.\n2. **Verify the package installation**: Use `pip list` to check if the package is installed. If not, install it using `pip install package_name`.\n3. **Check the package version**: Ensure the package version is compatible with your Python version.\n4. **Check the import statement**: Verify that the import statement is correct and that the package is in the correct directory.\n5. **Check the Python path**: Ensure that the package is in the Python path by checking the `sys.path` list.\n6. **Check the package documentation**: Look for any error messages or warnings in the documentation or logs.\n7. **Check the package dependencies**: Ensure that all required dependencies are installed.\n8. **Check the package installation directory**: Verify that the package is installed in the correct directory.\n\nBy following these steps, you should be able to identify and resolve the issue preventing the package from being imported.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 22599.23
+    },
+    {
+      "mode": "off",
+      "id": "math-2",
+      "question": "Explain the mathematical concept of a weighted average.",
+      "answer": "A weighted average is a type of average where each number is assigned a weight that reflects its importance. The weighted average is calculated by multiplying each number by its weight, summing these products, and then dividing by the sum of the weights.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 4361.76
+    },
+    {
+      "mode": "off",
+      "id": "recipe-2",
+      "question": "How do I make a tomato soup from scratch?",
+      "answer": "To make tomato soup from scratch, start by heating olive oil in a large pot over medium heat. Add chopped onions and garlic, sautéing until softened. Add chopped carrots and celery, sautéing for a few minutes. Add diced tomatoes, tomato paste, and vegetable broth, stirring to combine. Bring to a boil, then reduce heat to low, cover, and simmer for 20-30 minutes. Add chopped carrots and celery again, simmer for 5-10 minutes. Blend soup until smooth, then return to pot. Season with salt and pepper, and serve hot.",
+      "expected": {
+        "id": "8d5ade00ea0e4c788dea229f8636ce50",
+        "version": 1
+      },
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 7406.48
+    },
+    {
+      "mode": "off",
+      "id": "debug-2",
+      "question": "My software cannot open a file by relative path. How do I diagnose the problem?",
+      "answer": "To diagnose why your software cannot open a file by relative path, you can follow these steps:\n\n1. **Check File Path**: Ensure the file path you are trying to open is correct. Verify that the relative path is accurate and points to the correct directory or file.\n\n2. **File Permissions**: Check if the file has the correct permissions. Ensure that the user account under which the software is running has read permissions for the file.\n\n3. **File Type**: Confirm that the file is not corrupted. Try opening the file in a different application to see if it opens correctly.\n\n4. **Software Compatibility**: Ensure that the software you are using is compatible with the file format. Some software may not support certain file types or versions.\n\n5. **Error Messages**: Look for any error messages or warnings that might provide clues about what is going wrong. These messages can often indicate the cause of the problem.\n\n6. **File Location**: If the file is located on a network drive or in a different location, ensure that the network connection is stable and that the drive is accessible.\n\n7. **System Updates**: Ensure that your operating system and software are up to date, as updates often include fixes for compatibility issues.\n\nBy systematically checking these areas, you should be able to identify and resolve the issue preventing your software from opening the file by relative path.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 18826.94
+    },
+    {
+      "mode": "write",
+      "id": "math-1",
+      "question": "Teach me the mathematical concept of an arithmetic mean.",
+      "answer": "The arithmetic mean is a measure of central tendency in statistics. It is calculated by summing all the values in a dataset and then dividing by the number of values. It represents the average value of a set of numbers.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 5494.78
+    },
+    {
+      "mode": "write",
+      "id": "recipe-1",
+      "question": "How can I cook a basic mushroom omelet?",
+      "answer": "To cook a basic mushroom omelet, you'll need:\n\n1. 2 eggs\n2. 1/4 cup milk or water\n3. 1/4 cup chopped mushrooms\n4. Salt and pepper to taste\n\nInstructions:\n1. Beat the eggs in a bowl.\n2. Add milk or water, mushrooms, salt, and pepper to the beaten eggs.\n3. Heat a non-stick skillet over medium heat.\n4. Pour the egg mixture into the skillet.\n5. Let it cook for about 2-3 minutes on one side until the edges start to set.\n6. Flip the omelet and cook for another 2-3 minutes on the other side until both sides are golden brown.\n7. Remove from heat and serve.",
+      "expected": {
+        "id": "8d5ade00ea0e4c788dea229f8636ce50",
+        "version": 1
+      },
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 7345.5
+    },
+    {
+      "mode": "write",
+      "id": "debug-1",
+      "question": "How should I troubleshoot a Python program that cannot import an installed package?",
+      "answer": "To troubleshoot a Python program that cannot import an installed package, follow these steps:\n\n1. **Check the package name**: Ensure the package name is spelled correctly and matches the one installed on your system.\n2. **Verify the package installation**: Use `pip list` to check if the package is installed. If not, install it using `pip install package_name`.\n3. **Check the package version**: Ensure the package version is compatible with your Python version.\n4. **Check the import statement**: Verify that the import statement is correct and that the package is in the correct directory.\n5. **Check the Python path**: Ensure that the package is in the Python path by checking the `sys.path` list.\n6. **Check the package documentation**: Look for any error messages or warnings in the documentation or logs.\n7. **Check the package dependencies**: Ensure that all required dependencies are installed.\n8. **Check the package installation directory**: Verify that the package is installed in the correct directory.\n\nBy following these steps, you should be able to identify and resolve the issue preventing the package from being imported.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 9954.79
+    },
+    {
+      "mode": "write",
+      "id": "math-2",
+      "question": "Explain the mathematical concept of a weighted average.",
+      "answer": "A weighted average is a type of average where each number is assigned a weight that reflects its importance. The weighted average is calculated by multiplying each number by its weight, summing these products, and then dividing by the sum of the weights.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 2270.61
+    },
+    {
+      "mode": "write",
+      "id": "recipe-2",
+      "question": "How do I make a tomato soup from scratch?",
+      "answer": "To make tomato soup from scratch, start by heating olive oil in a large pot over medium heat. Add chopped onions and garlic, sautéing until softened. Add chopped carrots and celery, sautéing for a few minutes. Add diced tomatoes, tomato paste, and vegetable broth, stirring to combine. Bring to a boil, then reduce heat to low, cover, and simmer for 20-30 minutes. Add chopped carrots and celery again, simmer for 5-10 minutes. Blend soup until smooth, then return to pot. Season with salt and pepper, and serve hot.",
+      "expected": {
+        "id": "8d5ade00ea0e4c788dea229f8636ce50",
+        "version": 1
+      },
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 5652.15
+    },
+    {
+      "mode": "write",
+      "id": "debug-2",
+      "question": "My software cannot open a file by relative path. How do I diagnose the problem?",
+      "answer": "To diagnose why your software cannot open a file by relative path, you can follow these steps:\n\n1. **Check File Path**: Ensure the file path you are trying to open is correct. Verify that the relative path is accurate and points to the correct directory or file.\n\n2. **File Permissions**: Check if the file has the correct permissions. Ensure that the user account under which the software is running has read permissions for the file.\n\n3. **File Type**: Confirm that the file is not corrupted. Try opening the file in a different application to see if it opens correctly.\n\n4. **Software Compatibility**: Ensure that the software you are using is compatible with the file format. Some software may not support certain file types or versions.\n\n5. **Error Messages**: Look for any error messages or warnings that might provide clues about what is going wrong. These messages can often indicate the cause of the problem.\n\n6. **File Location**: If the file is located on a network drive or in a different location, ensure that the network connection is stable and that the drive is accessible.\n\n7. **System Updates**: Ensure that your operating system and software are up to date, as updates often include fixes for compatibility issues.\n\nBy systematically checking these areas, you should be able to identify and resolve the issue preventing your software from opening the file by relative path.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 0,
+      "elapsed_ms": 10870.78
+    },
+    {
+      "mode": "flat",
+      "id": "math-1",
+      "question": "Teach me the mathematical concept of an arithmetic mean.",
+      "answer": "The arithmetic mean is a measure of central tendency in statistics. It is calculated by summing all the values in a dataset and then dividing by the number of values. It represents the average value of a set of numbers.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 344.651,
+      "elapsed_ms": 2095.62
+    },
+    {
+      "mode": "flat",
+      "id": "recipe-1",
+      "question": "How can I cook a basic mushroom omelet?",
+      "answer": "To cook a basic mushroom omelet, you'll need:\n\n1. 2 eggs\n2. 1/4 cup milk or water\n3. 1/4 cup chopped mushrooms\n4. Salt and pepper to taste\n\nInstructions:\n1. Beat the eggs in a bowl.\n2. Add milk or water, mushrooms, salt, and pepper to the beaten eggs.\n3. Heat a non-stick skillet over medium heat.\n4. Pour the egg mixture into the skillet.\n5. Let it cook for about 2-3 minutes on one side until the edges start to set.\n6. Flip the omelet and cook for another 2-3 minutes on the other side until both sides are golden brown.\n7. Remove from heat and serve.",
+      "expected": {
+        "id": "8d5ade00ea0e4c788dea229f8636ce50",
+        "version": 1
+      },
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 307.103,
+      "elapsed_ms": 7442.44
+    },
+    {
+      "mode": "flat",
+      "id": "debug-1",
+      "question": "How should I troubleshoot a Python program that cannot import an installed package?",
+      "answer": "To troubleshoot a Python program that cannot import an installed package, follow these steps:\n\n1. **Check the package name**: Ensure the package name is spelled correctly and matches the one installed on your system.\n2. **Verify the package installation**: Use `pip list` to check if the package is installed. If not, install it using `pip install package_name`.\n3. **Check the package version**: Ensure the package version is compatible with your Python version.\n4. **Check the import statement**: Verify that the import statement is correct and that the package is in the correct directory.\n5. **Check the Python path**: Ensure that the package is in the Python path by checking the `sys.path` list.\n6. **Check the package documentation**: Look for any error messages or warnings in the documentation or logs.\n7. **Check the package dependencies**: Ensure that all required dependencies are installed.\n8. **Check the package installation directory**: Verify that the package is installed in the correct directory.\n\nBy following these steps, you should be able to identify and resolve the issue preventing the package from being imported.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 260.128,
+      "elapsed_ms": 10952.99
+    },
+    {
+      "mode": "flat",
+      "id": "math-2",
+      "question": "Explain the mathematical concept of a weighted average.",
+      "answer": "A weighted average is a type of average where each number is assigned a weight that reflects its importance. The weighted average is calculated by multiplying each number by its weight, summing these products, and then dividing by the sum of the weights.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 326.152,
+      "elapsed_ms": 2828.41
+    },
+    {
+      "mode": "flat",
+      "id": "recipe-2",
+      "question": "How do I make a tomato soup from scratch?",
+      "answer": "当前无法生成回答。",
+      "expected": {
+        "id": "8d5ade00ea0e4c788dea229f8636ce50",
+        "version": 1
+      },
+      "used": [
+        {
+          "id": "8d5ade00ea0e4c788dea229f8636ce50",
+          "version": 1
+        }
+      ],
+      "hit": true,
+      "success": false,
+      "tokens": 72,
+      "degraded": false,
+      "query_ms": 943.723,
+      "elapsed_ms": 90967.74
+    },
+    {
+      "mode": "flat",
+      "id": "debug-2",
+      "question": "My software cannot open a file by relative path. How do I diagnose the problem?",
+      "answer": "To diagnose why your software cannot open a file by relative path, you can follow these steps:\n\n1. **Check File Path**: Ensure the file path you are trying to open is correct. Verify that the relative path is accurate and points to the correct directory or file.\n\n2. **File Permissions**: Check if the file has the correct permissions. Ensure that the user account under which the software is running has read permissions for the file.\n\n3. **File Type**: Confirm that the file is not corrupted. Try opening the file in a different application to see if it opens correctly.\n\n4. **Software Compatibility**: Ensure that the software you are using is compatible with the file format. Some software may not support certain file types or versions.\n\n5. **Error Messages**: Look for any error messages or warnings that might provide clues about what is going wrong. These messages can often indicate the cause of the problem.\n\n6. **File Location**: If the file is located on a network drive or in a different location, ensure that the network connection is stable and that the drive is accessible.\n\n7. **System Updates**: Ensure that your operating system and software are up to date, as updates often include fixes for compatibility issues.\n\nBy systematically checking these areas, you should be able to identify and resolve the issue preventing your software from opening the file by relative path.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 532.291,
+      "elapsed_ms": 22643.28
+    },
+    {
+      "mode": "rsi",
+      "id": "math-1",
+      "question": "Teach me the mathematical concept of an arithmetic mean.",
+      "answer": "The arithmetic mean is a measure of central tendency in statistics. It is calculated by summing all the values in a dataset and then dividing by the number of values. It represents the average value of a set of numbers.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 294.161,
+      "elapsed_ms": 14303.78
+    },
+    {
+      "mode": "rsi",
+      "id": "recipe-1",
+      "question": "How can I cook a basic mushroom omelet?",
+      "answer": "To cook a basic mushroom omelet, you'll need:\n\n1. 2 eggs\n2. 1/4 cup milk or water\n3. 1/4 cup chopped mushrooms\n4. Salt and pepper to taste\n\nInstructions:\n1. Beat the eggs in a bowl.\n2. Add milk or water, mushrooms, salt, and pepper to the beaten eggs.\n3. Heat a non-stick skillet over medium heat.\n4. Pour the egg mixture into the skillet.\n5. Let it cook for about 2-3 minutes on one side until the edges start to set.\n6. Flip the omelet and cook for another 2-3 minutes on the other side until both sides are golden brown.\n7. Remove from heat and serve.",
+      "expected": {
+        "id": "8d5ade00ea0e4c788dea229f8636ce50",
+        "version": 1
+      },
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 249.643,
+      "elapsed_ms": 6652.36
+    },
+    {
+      "mode": "rsi",
+      "id": "debug-1",
+      "question": "How should I troubleshoot a Python program that cannot import an installed package?",
+      "answer": "To troubleshoot a Python program that cannot import an installed package, follow these steps:\n\n1. **Check the package name**: Ensure the package name is spelled correctly and matches the one installed on your system.\n2. **Verify the package installation**: Use `pip list` to check if the package is installed. If not, install it using `pip install package_name`.\n3. **Check the package version**: Ensure the package version is compatible with your Python version.\n4. **Check the import statement**: Verify that the import statement is correct and that the package is in the correct directory.\n5. **Check the Python path**: Ensure that the package is in the Python path by checking the `sys.path` list.\n6. **Check the package documentation**: Look for any error messages or warnings in the documentation or logs.\n7. **Check the package dependencies**: Ensure that all required dependencies are installed.\n8. **Check the package installation directory**: Verify that the package is installed in the correct directory.\n\nBy following these steps, you should be able to identify and resolve the issue preventing the package from being imported.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 189.638,
+      "elapsed_ms": 10327.46
+    },
+    {
+      "mode": "rsi",
+      "id": "math-2",
+      "question": "Explain the mathematical concept of a weighted average.",
+      "answer": "A weighted average is a type of average where each number is assigned a weight that reflects its importance. The weighted average is calculated by multiplying each number by its weight, summing these products, and then dividing by the sum of the weights.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 231.878,
+      "elapsed_ms": 2177.68
+    },
+    {
+      "mode": "rsi",
+      "id": "recipe-2",
+      "question": "How do I make a tomato soup from scratch?",
+      "answer": "当前无法生成回答。",
+      "expected": {
+        "id": "8d5ade00ea0e4c788dea229f8636ce50",
+        "version": 1
+      },
+      "used": [
+        {
+          "id": "8d5ade00ea0e4c788dea229f8636ce50",
+          "version": 1
+        }
+      ],
+      "hit": true,
+      "success": false,
+      "tokens": 72,
+      "degraded": false,
+      "query_ms": 194.991,
+      "elapsed_ms": 90203.34
+    },
+    {
+      "mode": "rsi",
+      "id": "debug-2",
+      "question": "My software cannot open a file by relative path. How do I diagnose the problem?",
+      "answer": "To diagnose why your software cannot open a file by relative path, you can follow these steps:\n\n1. **Check File Path**: Ensure the file path you are trying to open is correct. Verify that the relative path is accurate and points to the correct directory or file.\n\n2. **File Permissions**: Check if the file has the correct permissions. Ensure that the user account under which the software is running has read permissions for the file.\n\n3. **File Type**: Confirm that the file is not corrupted. Try opening the file in a different application to see if it opens correctly.\n\n4. **Software Compatibility**: Ensure that the software you are using is compatible with the file format. Some software may not support certain file types or versions.\n\n5. **Error Messages**: Look for any error messages or warnings that might provide clues about what is going wrong. These messages can often indicate the cause of the problem.\n\n6. **File Location**: If the file is located on a network drive or in a different location, ensure that the network connection is stable and that the drive is accessible.\n\n7. **System Updates**: Ensure that your operating system and software are up to date, as updates often include fixes for compatibility issues.\n\nBy systematically checking these areas, you should be able to identify and resolve the issue preventing your software from opening the file by relative path.",
+      "expected": null,
+      "used": [],
+      "hit": false,
+      "success": false,
+      "tokens": 0,
+      "degraded": false,
+      "query_ms": 291.491,
+      "elapsed_ms": 15084.54
+    }
+  ],
+  "summary": {
+    "off": {
+      "hit": 0,
+      "success": 0,
+      "tokens": 0,
+      "degraded": 0,
+      "query_ms": 0,
+      "elapsed_ms": 11335.547
+    },
+    "write": {
+      "hit": 0,
+      "success": 0,
+      "tokens": 0,
+      "degraded": 0,
+      "query_ms": 0,
+      "elapsed_ms": 6931.435
+    },
+    "flat": {
+      "hit": 0.167,
+      "success": 0,
+      "tokens": 12,
+      "degraded": 0,
+      "query_ms": 452.341,
+      "elapsed_ms": 22821.747
+    },
+    "rsi": {
+      "hit": 0.167,
+      "success": 0,
+      "tokens": 12,
+      "degraded": 0,
+      "query_ms": 241.967,
+      "elapsed_ms": 23124.86
+    }
+  },
+  "index_build_ms": 441.73
+}
